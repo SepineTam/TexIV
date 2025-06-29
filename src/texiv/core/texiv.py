@@ -7,7 +7,7 @@
 # @Email  : sepinetam@gmail.com
 # @File   : texiv.py
 
-from typing import Dict, List
+from typing import Dict, List, Set, Tuple
 
 import numpy as np
 import tomllib
@@ -58,6 +58,16 @@ class TexIV:
                 "count": total_count,
                 "rate": rate}
 
+    def embed_keywords(self, keywords: List[str] | Set[str]) -> np.ndarray:
+        """Embed keywords using the embedder."""
+        if isinstance(keywords, set):
+            keywords = list(keywords)
+        return self.embedder.embed(keywords)
+
+    def embed_stata_keywords(self, kws: str):
+        keywords = set(kws.split())
+        return self.embed_keywords(keywords)
+
     def texiv_it(
             self,
             content: str,
@@ -74,3 +84,28 @@ class TexIV:
         filtered = self.filter.filter(dist_array)
         two_stage_filtered = self.filter.two_stage_filter(filtered)
         return self._description(two_stage_filtered)
+
+    def texiv_one(self,
+                   content: str,
+                   embedded_keywords: np.ndarray) -> Tuple[int, int, float]:
+        """Process a single content with keywords."""
+        chunked_content = self.chunker.segment_from_text(content)
+        embedded_chunked_content = self.embedder.embed(chunked_content)
+        dist_array = self.similar.similarity(embedded_chunked_content,
+                                             embedded_keywords)
+
+        filtered = self.filter.filter(dist_array)
+        two_stage_filtered = self.filter.two_stage_filter(filtered)
+
+        true_count = int(np.sum(two_stage_filtered))
+        total_count = len(two_stage_filtered)
+        return true_count, total_count, true_count / total_count
+
+    def texiv_stata(self, texts: List[str], kws: str):
+        embedded_keywords = self.embed_stata_keywords(kws)
+        results = [
+            self.texiv_one(text, embedded_keywords)
+            for text in texts
+        ]
+        freqs, counts, rates = zip(*results)
+        return list(freqs), list(counts), list(rates)

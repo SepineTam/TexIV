@@ -10,9 +10,12 @@
 from importlib.metadata import version
 
 from .core import TexIV
+from .stata import StataTexIV
+
 
 __version__ = version("texiv")
 
 __all__ = [
-    "TexIV"
+    "TexIV",
+    "StataTexIV"
 ]
