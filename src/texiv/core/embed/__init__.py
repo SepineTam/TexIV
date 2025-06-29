@@ -32,19 +32,19 @@ class Embed:
 
         self._embedders.update(_pending_registrations)
 
-    def embed(self, input_text: List[str]):
+    def embed(self, input_text: List[str]) -> np.ndarray:
         fn = self._embedders[self.embed_type]
         return fn(self, input_text)
 
     @_register("ollama")
-    def _embed_with_ollama(self, input_text: List[str]) -> np.array:
+    def _embed_with_ollama(self, input_text: List[str]) -> np.ndarray:
         resp = ollama.embed(model=self.model,
                             input=input_text)
         embeddings = list2nparray(resp.embeddings)
         return embeddings
 
     @_register("openai")
-    def _embed_with_openai(self, input_text: List[str]) -> np.array:
+    def _embed_with_openai(self, input_text: List[str]) -> np.ndarray:
         client = OpenAI(api_key=self.api_key, base_url=self.base_url)
         # 发起 embeddings 请求
         resp = client.embeddings.create(
@@ -63,7 +63,7 @@ if __name__ == "__main__":
         base_url="https://api.siliconflow.cn/v1",
         api_key="sk-sgokfzyabbzwfylktgwtwionmuexdxgiyzzofmcvdsdvkbqw")
     content = "滚滚长江东逝水，浪花淘尽英雄。我曾经仰望天空，想数清楚天空中的云朵到底在想写什么，可是我终究是无法靠近，无法知道它到底在哪里。"
-    embeddings = embedder.embed(content)
+    embeddings = embedder.embed([content])
     print(embeddings)
     print(type(embeddings))
     print(embeddings.shape)
