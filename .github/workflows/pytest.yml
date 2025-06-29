@@ -1,0 +1,35 @@
+name: Python Tests
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        pip install uv
+        uv sync
+        uv pip install --upgrade pip
+        uv pip install pytest
+
+    - name: Run Pytest tests
+      run: |
+        pytest src/tests/

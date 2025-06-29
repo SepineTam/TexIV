@@ -1,0 +1,76 @@
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2025 - Present Sepine Tam, Inc. All Rights Reserved
+#
+# @Author : Sepine Tam
+# @Email  : sepinetam@gmail.com
+# @File   : texiv.py
+
+from typing import Dict, List
+
+import numpy as np
+import tomllib
+
+from ..config import Config
+from .chunk import Chunk
+from .embed import Embed
+from .filter import Filter
+from .similarity import Similarity
+
+
+class TexIV:
+    CONFIG_FILE_PATH = Config().CONFIG_FILE_PATH
+    with open(CONFIG_FILE_PATH, "rb") as f:
+        cfg = tomllib.load(f)
+
+    # embedding config
+    embed_type = cfg.get("embed").get("EMBED_TYPE").lower()
+    MODEL = cfg.get("embed").get(embed_type).get("MODEL")
+    BASE_URL = cfg.get("embed").get(embed_type).get("BASE_URL")
+    API_KEY = cfg.get("embed").get(embed_type).get("API_KEY")
+
+    # texiv config
+    texiv_cfg = cfg.get("texiv")
+    stopwords_path = texiv_cfg.get("chunk").get("stopwords_path")
+    if stopwords_path == "":
+        stopwords_path = None
+    SIMILARITY_MTHD = texiv_cfg.get("similarity").get("MTHD")
+    VALVE_TYPE = texiv_cfg.get("filter").get("VALVE_TYPE")
+    valve = texiv_cfg.get("filter").get("valve")
+
+    def __init__(self):
+        self.chunker = Chunk()
+        self.embedder = Embed(embed_type=self.embed_type,
+                              model=self.MODEL,
+                              base_url=self.BASE_URL,
+                              api_key=self.API_KEY)
+        self.similar = Similarity()
+        self.filter = Filter(valve=self.valve)
+
+    @staticmethod
+    def _description(
+            finial_filtered_data: np.ndarray) -> Dict[str, float | int]:
+        true_count = int(np.sum(finial_filtered_data))
+        total_count = len(finial_filtered_data)
+        rate = true_count / total_count
+        return {"freq": true_count,
+                "count": total_count,
+                "rate": rate}
+
+    def texiv_it(
+            self,
+            content: str,
+            keywords: List[str],
+            stopwords: List[str] | None = None):
+        if stopwords:
+            self.chunker.load_stopwords(stopwords)
+        chunked_content = self.chunker.segment_from_text(content)
+        embedded_chunked_content = self.embedder.embed(chunked_content)
+        embedded_keywords = self.embedder.embed(keywords)
+        dist_array = self.similar.similarity(embedded_chunked_content,
+                                             embedded_keywords)
+
+        filtered = self.filter.filter(dist_array)
+        two_stage_filtered = self.filter.two_stage_filter(filtered)
+        return self._description(two_stage_filtered)

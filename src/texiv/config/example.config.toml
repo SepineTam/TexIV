@@ -1,0 +1,22 @@
+[embed]
+EMBED_TYPE = "ollama"
+
+[embed.ollama]
+MODEL = "bge-m3:latest"
+BASE_URL = "https://localhost:11434"
+API_KEY = "<YOUR_OLLAMA_API_KEY>"
+
+[embed.openai]
+MODEL = "BAAI/bge-m3"
+BASE_URL = "https://api.openai.com/v1"
+API_KEY = "<YOUR_OPENAI_API_KEY>"
+
+[texiv.chunk]
+stopwords_path = ""
+
+[texiv.similarity]
+MTHD = "cosine"
+
+[texiv.filter]
+VALVE_TYPE = "value"
+valve = 0.6

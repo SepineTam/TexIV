@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+message: "A machine learning–based method for transforming text into instrumental variables (IV)."
+authors:
+  - family-names: "Tan"
+    given-names: "Song"
+    email: "sepinetam@gmail.com"
+title: "TexIV: A machine learning–based method for transforming text into instrumental variables (IV)."
+version: 0.1.0
+date-released: 2025-06-30
+url: "https://github.com/sepinetam/texiv"
+repository-code: "https://github.com/sepinetam/texiv"
+license: MIT
