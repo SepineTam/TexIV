@@ -26,10 +26,10 @@ jobs:
     - name: Install dependencies
       run: |
         pip install uv
-        uv sync
         uv pip install --upgrade pip
+        uv sync
         uv pip install pytest
 
     - name: Run Pytest tests
       run: |
-        pytest src/tests/
+        uv run pytest src/tests/
