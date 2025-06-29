@@ -19,8 +19,11 @@ class Config:
         except FileNotFoundError as e:
             logging.warning(f"Config file not found: {e}")
             if not os.path.exists(self.CONFIG_FILE_PATH):
-                os.makedirs(os.path.dirname(self.CONFIG_FILE_PATH), exist_ok=True)
-                shutil.copy(self.DEFAULT_CONFIG_FILE_PATH, self.CONFIG_FILE_PATH)
+                os.makedirs(os.path.dirname(self.CONFIG_FILE_PATH),
+                            exist_ok=True)
+                shutil.copy(self.DEFAULT_CONFIG_FILE_PATH,
+                            self.CONFIG_FILE_PATH)
+
                 is_default = input(
                     "Whether to use the default configuration "
                     "(depending on local ollama, using the bge-m3:latest model): "
