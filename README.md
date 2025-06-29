@@ -52,7 +52,7 @@ Output example:
 The project also provides a command-line interface that can be used directly after installation:
 
 ```bash
-tiv --help
+texiv --help
 ```
 
 ## 🛠️ Configuration
