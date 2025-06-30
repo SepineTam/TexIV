@@ -1,5 +1,5 @@
 {smcl}
-{* *! version 0.1.1 30jun2025}{...}
+{* *! version 0.1.2 30jun2025}{...}
 {viewerjumpto "Syntax" "texiv##syntax"}{...}
 {viewerjumpto "Description" "texiv##description"}{...}
 {viewerjumpto "Options" "texiv##options"}{...}

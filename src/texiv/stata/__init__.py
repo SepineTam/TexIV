@@ -12,6 +12,10 @@ class StataTexIV:
         total_count_varname = f"{varname}_count"
         rate_varname = f"{varname}_rate"
 
+        Data.addVarInt(true_count_varname)
+        Data.addVarInt(total_count_varname)
+        Data.addVarFloat(rate_varname)
+
         Data.store(true_count_varname, None, freqs)
         Data.store(total_count_varname, None, counts)
         Data.store(rate_varname, None, rates)

@@ -7,7 +7,7 @@
 A machine learning–based package for transforming text into instrumental variables (IV).
 
 [![PyPI version](https://img.shields.io/pypi/v/texiv.svg)](https://pypi.org/project/texiv/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](../../LICENSE)
 [![Issue](https://img.shields.io/badge/Issue-report-green.svg)](https://github.com/sepinetam/texiv/issues/new)
 
 ## Install (Stata)
@@ -18,8 +18,33 @@ net install github , from ("https://raw.githubusercontent.com/haghish/github/mas
 
 Then, you can install `texiv` with command `github`:
 ```bash
-github install sepinetam/texiv
+github install SepineTam/TexIV
 ```
+
+If there is still any problem, you can use `db github` to the GUI installation.
+Enter:
+```toml
+keywords = "texiv"
+language = "Python"
+```
+
+Then you can see the return
+```stata
+. github search texiv, language(Python) in("name")
+
+ ----------------------------------------------------------------------------------
+  Repository      Username    Install  Description 
+ ----------------------------------------------------------------------------------
+  TexIV           SepineTam   Install  A machine learning–based package for
+                              1167k    transforming text into instrumental
+                                       variables (IV).
+                                       updated on 2025-06-30
+                                       Fork:0    Star:1    Lang:Python      
+
+ ----------------------------------------------------------------------------------
+```
+
+Click Install, and then you can install the package to Stata.
 
 ## Install (Python)
 The necessary one is the Python part, and also the most difficult one. 
