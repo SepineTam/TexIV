@@ -1,0 +1,9 @@
+v 0.1.1
+d Materials for texiv package
+d Song Tan (谭淞), sepinetam@gmail.com
+d
+d Distribution-Date: 20250630
+d
+d Support: email sepinetam@gmail.com
+d
+p texiv A machine learning–based package for transforming text into instrumental variables (IV)
