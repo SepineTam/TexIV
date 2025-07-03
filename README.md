@@ -10,6 +10,11 @@ A machine learning–based package for transforming text into instrumental varia
 ---
 ![icon](source/img/TexIV.png)
 
+## 🌰 Example
+Visit [Stata Example File](source/example/dofiles/main.do) and [Python Example File](source/example/pyscript/main.py).
+
+There is a step-by-step example.
+
 ## ✨ Feature
 
 - Support multiple Chinese word segmentation and embedding methods
