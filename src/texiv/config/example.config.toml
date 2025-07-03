@@ -20,4 +20,4 @@ MTHD = "cosine"
 
 [texiv.filter]
 VALVE_TYPE = "value"
-valve = 0.6
+valve = 0.618
