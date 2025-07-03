@@ -1,10 +1,11 @@
 [embed]
 EMBED_TYPE = "ollama"
+MAX_LENGTH = 64
 
 [embed.ollama]
 MODEL = "bge-m3:latest"
 BASE_URL = "https://localhost:11434"
-API_KEY = "<YOUR_OLLAMA_API_KEY>"
+API_KEY = "ollama"
 
 [embed.openai]
 MODEL = "BAAI/bge-m3"

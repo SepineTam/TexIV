@@ -26,6 +26,7 @@ class TexIV:
 
     # embedding config
     embed_type = cfg.get("embed").get("EMBED_TYPE").lower()
+    MAX_LENGTH = cfg.get("embed").get("MAX_LENGTH", 64)
     MODEL = cfg.get("embed").get(embed_type).get("MODEL")
     BASE_URL = cfg.get("embed").get(embed_type).get("BASE_URL")
     API_KEY = cfg.get("embed").get(embed_type).get("API_KEY")
@@ -44,7 +45,8 @@ class TexIV:
         self.embedder = Embed(embed_type=self.embed_type,
                               model=self.MODEL,
                               base_url=self.BASE_URL,
-                              api_key=self.API_KEY)
+                              api_key=self.API_KEY,
+                              max_length=self.MAX_LENGTH)
         self.similar = Similarity()
         self.filter = Filter(valve=self.valve)
 

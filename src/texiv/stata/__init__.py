@@ -1,11 +1,13 @@
+from typing import List
+
 from ..core import TexIV
 
 
 class StataTexIV:
     @staticmethod
-    def texiv(Data, varname, kws):
+    def texiv(Data, varname: str, kws: str):
         texiv = TexIV()
-        contents = Data.get(varname)
+        contents: List[str] = Data.get(varname)
         freqs, counts, rates = texiv.texiv_stata(contents, kws)
 
         true_count_varname = f"{varname}_freq"
