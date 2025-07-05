@@ -7,12 +7,14 @@
 # @Email  : sepinetam@gmail.com
 # @File   : texiv.py
 
+import sys
 from typing import Dict, List, Set, Tuple
 
 import numpy as np
 import tomllib
 
 from ..config import Config
+from .utils import yes_or_no
 from .chunk import Chunk
 from .embed import Embed
 from .filter import Filter
@@ -20,7 +22,17 @@ from .similarity import Similarity
 
 
 class TexIV:
-    CONFIG_FILE_PATH = Config().CONFIG_FILE_PATH
+    CONFIG_FILE_PATH = Config.CONFIG_FILE_PATH
+    if not Config.is_exist():
+        print(
+            "Configuration file not found. "
+            "Please ensure the file exist!\n"
+            "You can use `texiv --init` in terminal to create a default config.")
+        __is_init = yes_or_no("Do you want to create a default config file?")
+        if not __is_init:
+            sys.exit(1)
+        else:
+            Config()
     with open(CONFIG_FILE_PATH, "rb") as f:
         cfg = tomllib.load(f)
 
@@ -54,7 +66,8 @@ class TexIV:
 
     @staticmethod
     def _description(
-            finial_filtered_data: np.ndarray) -> Dict[str, float | int]:
+            finial_filtered_data: np.ndarray
+    ) -> Dict[str, float | int]:
         true_count = int(np.sum(finial_filtered_data))
         total_count = len(finial_filtered_data)
         rate = true_count / total_count

@@ -1,10 +1,13 @@
 import logging
 import os
 import shutil
+import sys
 from typing import List
 
 import tomlkit
 import tomllib
+
+from ..core.utils import yes_or_no
 
 
 class Config:
@@ -12,6 +15,7 @@ class Config:
     DEFAULT_CONFIG_FILE_PATH = os.path.abspath(
         os.path.join(os.path.dirname(__file__), "example.config.toml")
     )
+    BASE_DIR = os.path.dirname(CONFIG_FILE_PATH)
 
     def __init__(self):
         try:
@@ -121,6 +125,30 @@ class Config:
         provider: str = "openai"
         fields: List[str] = ["MODEL", "BASE_URL", "API_KEY"]
         self._init_embed_fields(provider=provider, fields=fields)
+
+    @staticmethod
+    def cp_config_file():
+        os.makedirs(Config.BASE_DIR, exist_ok=True)
+        shutil.copy(Config.DEFAULT_CONFIG_FILE_PATH,
+                    Config.CONFIG_FILE_PATH)
+        print("Config file created at:", Config.CONFIG_FILE_PATH)
+
+    @staticmethod
+    def cli_init():
+        # Check whether exist the config file of Config.CONFIG_FILE_PATH
+        if os.path.exists(Config.CONFIG_FILE_PATH):
+            print("There is existing config file")
+            flag = yes_or_no("Whether overwrite the existing config file?")
+            if not flag:
+                sys.exit(0)
+            # Remove the config file
+            os.remove(Config.CONFIG_FILE_PATH)
+        # Now there is not existing config file
+        Config.cp_config_file()
+
+    @staticmethod
+    def is_exist() -> bool:
+        return os.path.exists(Config.CONFIG_FILE_PATH)
 
 
 if __name__ == "__main__":
