@@ -17,7 +17,7 @@ github install SepineTam/TexIV, replace
 * Let's start!
 
 * Load data from GitHub
-use https://raw.githubusercontent.com/sepinetam/data/master/source/example/data/shanghai_reports.dta
+use "https://raw.githubusercontent.com/SepineTam/TexIV/master/source/example/data/shanghai_reports.dta", clear
 
 * Or you can use the data from your local disk
 * use source/example/data/shanghai_reports.dta, clear
