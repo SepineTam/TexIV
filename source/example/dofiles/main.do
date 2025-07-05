@@ -15,7 +15,11 @@ github install SepineTam/TexIV, replace
 
 * Now, I think you have ever do everything what we should do.
 * Let's start!
-use source/example/data/shanghai_reports.dta, clear
 
+* Load data from GitHub
+use https://raw.githubusercontent.com/sepinetam/data/master/source/example/data/shanghai_reports.dta
+
+* Or you can use the data from your local disk
+* use source/example/data/shanghai_reports.dta, clear
 texiv report, kws("政府 数字化 经济发展 互联网 物联网 新质生产力 中国制造 产业升级")
 
