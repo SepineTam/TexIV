@@ -1,6 +1,7 @@
 [embed]
 EMBED_TYPE = "ollama"
 MAX_LENGTH = 64
+IS_ASYNC = false
 
 [embed.ollama]
 MODEL = "bge-m3:latest"

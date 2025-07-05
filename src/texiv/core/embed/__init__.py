@@ -1,21 +1,11 @@
+import asyncio
 import logging
-from typing import Callable, Dict, List
+from typing import List
 
 import numpy as np
-# import ollama
-from openai import OpenAI
+from openai import AsyncOpenAI, OpenAI
 
 from ..utils import list2nparray
-
-# _pending_registrations = {}
-
-
-# def _register(embed_type: str):
-#     def decorator(func):
-#         _pending_registrations[embed_type] = func
-#         return func
-#
-#     return decorator
 
 
 class Embed:
@@ -26,9 +16,11 @@ class Embed:
                  model: str = None,
                  base_url: str = None,
                  api_key: str = None,
-                 max_length: int = None):
+                 max_length: int = None,
+                 is_async: bool = True):
         self.embed_type = embed_type
         self.model = model
+
         if embed_type == "ollama":
             if base_url is None:
                 base_url = "https://localhost:11434"
@@ -37,15 +29,28 @@ class Embed:
         self.base_url = base_url
         self.api_key = api_key
 
-        self.client = OpenAI(api_key=self.api_key, base_url=self.base_url)
+        self.client = OpenAI(api_key=self.api_key,
+                             base_url=self.base_url)
+        self.async_client = AsyncOpenAI(api_key=self.api_key,
+                                        base_url=self.base_url)
 
         if max_length:
             self._MAX_LENGTH = max_length
+        else:
+            self._MAX_LENGTH = 0
+        self.is_async = is_async
 
     def embed(self, input_text: List[str]) -> np.ndarray:
         length = len(input_text)
         logging.info(f"This Embedding Process has {length} texts to embed.")
         text_batches: List[List[str]] = self._split_text(input_text)
+
+        if self.is_async:
+            return asyncio.run(self._async_embed(text_batches))
+        else:
+            return self._embed(text_batches)
+
+    def _embed(self, text_batches: List[List[str]]) -> np.ndarray:
         batch_embeddings = []
         for batch in text_batches:
             batch_result = self._bench_embed(batch)
@@ -53,16 +58,32 @@ class Embed:
 
         return np.concatenate(batch_embeddings, axis=0)
 
-    def _bench_embed(self, input_text: List[str]) -> np.ndarray:
+    async def _async_embed(self, text_batches: List[List[str]]) -> np.ndarray:
+        tasks = [self._async_bench_embed(batch) for batch in text_batches]
+        batch_embeddings = await asyncio.gather(*tasks)
+        return np.concatenate(batch_embeddings, axis=0)
+
+    def _bench_embed(self, batch: List[str]) -> np.ndarray:
         resp = self.client.embeddings.create(
             model=self.model,
-            input=input_text
+            input=batch
         )
         vectors = [record.embedding for record in resp.data]
         embeddings = list2nparray(vectors)
         return embeddings
 
-    def _split_text(self, input_text: List[str], max_length: int = None) -> List[List[str]]:
+    async def _async_bench_embed(self, batch: List[str]) -> np.ndarray:
+        resp = await self.async_client.embeddings.create(
+            model=self.model,
+            input=batch
+        )
+        vectors = [record.embedding for record in resp.data]
+        embeddings = list2nparray(vectors)
+        return embeddings
+
+    def _split_text(self,
+                    input_text: List[str],
+                    max_length: int = None) -> List[List[str]]:
         if max_length is None:
             max_length = self._MAX_LENGTH
         if max_length <= 0 or len(input_text) <= max_length:

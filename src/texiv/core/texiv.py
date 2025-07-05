@@ -27,6 +27,7 @@ class TexIV:
     # embedding config
     embed_type = cfg.get("embed").get("EMBED_TYPE").lower()
     MAX_LENGTH = cfg.get("embed").get("MAX_LENGTH", 64)
+    IS_ASYNC = cfg.get("embed").get("IS_ASYNC", False)
     MODEL = cfg.get("embed").get(embed_type).get("MODEL")
     BASE_URL = cfg.get("embed").get(embed_type).get("BASE_URL")
     API_KEY = cfg.get("embed").get(embed_type).get("API_KEY")
@@ -46,7 +47,8 @@ class TexIV:
                               model=self.MODEL,
                               base_url=self.BASE_URL,
                               api_key=self.API_KEY,
-                              max_length=self.MAX_LENGTH)
+                              max_length=self.MAX_LENGTH,
+                              is_async=self.IS_ASYNC)
         self.similar = Similarity()
         self.filter = Filter(valve=self.valve)
 
@@ -88,8 +90,8 @@ class TexIV:
         return self._description(two_stage_filtered)
 
     def texiv_one(self,
-                   content: str,
-                   embedded_keywords: np.ndarray) -> Tuple[int, int, float]:
+                  content: str,
+                  embedded_keywords: np.ndarray) -> Tuple[int, int, float]:
         """Process a single content with keywords."""
         chunked_content = self.chunker.segment_from_text(content)
         embedded_chunked_content = self.embedder.embed(chunked_content)
