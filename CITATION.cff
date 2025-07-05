@@ -5,7 +5,7 @@ authors:
     given-names: "Song"
     email: "sepinetam@gmail.com"
 title: "TexIV: A machine learning–based method for transforming text into instrumental variables (IV)."
-version: 0.1.4
+version: 0.1.5
 date-released: 2025-07-05
 url: "https://github.com/sepinetam/texiv"
 repository-code: "https://github.com/sepinetam/texiv"

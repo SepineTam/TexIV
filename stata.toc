@@ -1,8 +1,8 @@
-v 0.1.4
+v 0.1.5
 d Materials for texiv package
 d Song Tan (谭淞), sepinetam@gmail.com
 d
-d Distribution-Date: 20250630
+d Distribution-Date: 20250705
 d
 d Support: email sepinetam@gmail.com
 d
