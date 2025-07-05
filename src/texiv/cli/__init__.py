@@ -1,10 +1,9 @@
 import argparse
 import sys
 
+from .. import __version__
 from ..config import Config
 from ..core.utils import yes_or_no
-
-from .. import __version__
 
 
 def main():

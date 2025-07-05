@@ -14,11 +14,11 @@ import numpy as np
 import tomllib
 
 from ..config import Config
-from .utils import yes_or_no
 from .chunk import Chunk
 from .embed import Embed
 from .filter import Filter
 from .similarity import Similarity
+from .utils import yes_or_no
 
 
 class TexIV:
