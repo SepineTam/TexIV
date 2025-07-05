@@ -1,4 +1,6 @@
-# TexIV
+<p align="center">
+  <img src="source/img/TexIV-logo_16_9.png" width="256" alt="TexIV Logo">
+</p>
 
 ---
 A machine learning–based package for transforming text into instrumental variables (IV).
@@ -6,9 +8,9 @@ A machine learning–based package for transforming text into instrumental varia
 [![PyPI version](https://img.shields.io/pypi/v/texiv.svg)](https://pypi.org/project/texiv/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Issue](https://img.shields.io/badge/Issue-report-green.svg)](https://github.com/sepinetam/texiv/issues/new)
+[![Wiki](https://img.shields.io/badge/Doc-Wiki-blue.svg)](https://github.com/sepinetam/texiv/wiki)
 
 ---
-![icon](source/img/TexIV.png)
 
 ## 🌰 Example
 Visit [Stata Example File](source/example/dofiles/main.do) and [Python Example File](source/example/pyscript/main.py).
