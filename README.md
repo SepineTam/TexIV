@@ -9,6 +9,7 @@ A machine learning–based package for transforming text into instrumental varia
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Issue](https://img.shields.io/badge/Issue-report-green.svg)](https://github.com/sepinetam/texiv/issues/new)
 [![Wiki](https://img.shields.io/badge/Doc-Wiki-blue.svg)](https://github.com/sepinetam/texiv/wiki)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/SepineTam/TexIV)
 
 ---
 
