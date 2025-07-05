@@ -46,7 +46,13 @@ class Embed:
         text_batches: List[List[str]] = self._split_text(input_text)
 
         if self.is_async:
-            return asyncio.run(self._async_embed(text_batches))
+            try:
+                return asyncio.run(self._async_embed(text_batches))
+            except RuntimeError as e:
+                logging.error(f"Async embedding failed: {e}")
+                logging.info("Falling back to synchronous embedding.")
+                self.is_async = False
+                return self._embed(text_batches)
         else:
             return self._embed(text_batches)
 
