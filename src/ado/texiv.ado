@@ -3,7 +3,7 @@
 Author  : Song Tan (谭淞)
 Email   : sepinetam@gmail.com
 ProjAdd : https://github.com/sepinetam/texiv
-Version : 0.1.2
+Version : 0.1.4
 */
 capture program drop texiv
 program texiv
