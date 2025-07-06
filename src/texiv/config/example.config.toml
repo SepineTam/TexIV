@@ -6,12 +6,16 @@ IS_ASYNC = false
 [embed.ollama]
 MODEL = "bge-m3:latest"
 BASE_URL = "https://localhost:11434"
-API_KEY = "ollama"
+API_KEY = ["ollama"]
 
 [embed.openai]
 MODEL = "BAAI/bge-m3"
 BASE_URL = "https://api.openai.com/v1"
-API_KEY = "<YOUR_OPENAI_API_KEY>"
+API_KEY = [
+    "<YOUR_OPENAI_API_KEY_1>",
+    "<YOUR_OPENAI_API_KEY_2>",
+    "<YOUR_OPENAI_API_KEY_3>"
+]
 
 [texiv.chunk]
 stopwords_path = ""

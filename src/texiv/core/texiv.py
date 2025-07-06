@@ -38,12 +38,12 @@ class TexIV:
         cfg = tomllib.load(f)
 
     # embedding config
-    embed_type = cfg.get("embed").get("EMBED_TYPE").lower()
-    MAX_LENGTH = cfg.get("embed").get("MAX_LENGTH", 64)
-    IS_ASYNC = cfg.get("embed").get("IS_ASYNC", False)
-    MODEL = cfg.get("embed").get(embed_type).get("MODEL")
-    BASE_URL = cfg.get("embed").get(embed_type).get("BASE_URL")
-    API_KEY = cfg.get("embed").get(embed_type).get("API_KEY")
+    embed_type: str = cfg.get("embed").get("EMBED_TYPE").lower()
+    MAX_LENGTH: int = cfg.get("embed").get("MAX_LENGTH", 64)
+    IS_ASYNC: bool = cfg.get("embed").get("IS_ASYNC", False)
+    MODEL: str = cfg.get("embed").get(embed_type).get("MODEL")
+    BASE_URL: str = cfg.get("embed").get(embed_type).get("BASE_URL")
+    API_KEY: List[str] = cfg.get("embed").get(embed_type).get("API_KEY")
 
     # texiv config
     texiv_cfg = cfg.get("texiv")

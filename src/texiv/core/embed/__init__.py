@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import List
+from typing import List, Type, Union
 
 import numpy as np
 from openai import AsyncOpenAI, OpenAI
@@ -15,7 +15,7 @@ class Embed:
                  embed_type: str = None,
                  model: str = None,
                  base_url: str = None,
-                 api_key: str = None,
+                 api_key: List[str] = None,
                  max_length: int = None,
                  is_async: bool = True):
         self.embed_type = embed_type
@@ -25,20 +25,44 @@ class Embed:
             if base_url is None:
                 base_url = "https://localhost:11434"
             if api_key is None:
-                api_key = "ollama" if api_key is None else api_key
+                api_key = ["ollama"]
         self.base_url = base_url
-        self.api_key = api_key
+        self.api_key = api_key or []
 
-        self.client = OpenAI(api_key=self.api_key,
-                             base_url=self.base_url)
-        self.async_client = AsyncOpenAI(api_key=self.api_key,
-                                        base_url=self.base_url)
+        self._api_index = 0
+
+        self.clients: List[OpenAI] = [
+            OpenAI(
+                api_key=key,
+                base_url=self.base_url
+            ) for key in self.api_key
+        ]
+        self.async_clients: List[AsyncOpenAI] = [
+            AsyncOpenAI(
+                api_key=key,
+                base_url=self.base_url
+            ) for key in self.api_key
+        ]
 
         if max_length:
             self._MAX_LENGTH = max_length
         else:
             self._MAX_LENGTH = 0
         self.is_async = is_async
+
+    def _next_client(self,
+                     is_async: bool
+                     ) -> Union[OpenAI, AsyncOpenAI]:
+        if not self.clients:
+            self.clients = [OpenAI(base_url=self.base_url)]
+            self.async_clients = [AsyncOpenAI(base_url=self.base_url)]
+        index = self._api_index % len(self.clients)
+        self._api_index += 1
+
+        if is_async:
+            return self.async_clients[index]
+        else:
+            return self.clients[index]
 
     def embed(self, input_text: List[str]) -> np.ndarray:
         length = len(input_text)
@@ -70,7 +94,8 @@ class Embed:
         return np.concatenate(batch_embeddings, axis=0)
 
     def _bench_embed(self, batch: List[str]) -> np.ndarray:
-        resp = self.client.embeddings.create(
+        client = self._next_client(is_async=False)
+        resp = client.embeddings.create(
             model=self.model,
             input=batch
         )
@@ -79,7 +104,8 @@ class Embed:
         return embeddings
 
     async def _async_bench_embed(self, batch: List[str]) -> np.ndarray:
-        resp = await self.async_client.embeddings.create(
+        async_client = self._next_client(is_async=True)
+        resp = await async_client.embeddings.create(
             model=self.model,
             input=batch
         )

@@ -1,4 +1,5 @@
 import argparse
+import logging
 import sys
 
 from .. import __version__
@@ -14,7 +15,7 @@ def main():
         "-v", "--version",
         action="version",
         version=f"TexIV {__version__}",
-        help="show the program's version number"
+        help="Show the program's version number"
     )
 
     parser.add_argument(
@@ -35,13 +36,23 @@ def main():
         help="Show TexIV configuration"
     )
 
-    """
     # Add sub parsers for set and rm commands
     subparsers = parser.add_subparsers(
         dest='command',
         help='Available commands'
     )
 
+    # Add new api_key
+    add_key_parser = subparsers.add_parser(
+        "add",
+        help="Add new API KEY for embedding service"
+    )
+    add_key_parser.add_argument(
+        "key",
+        help="New API KEY"
+    )
+
+    """
     # Add set sub parser
     set_parser = subparsers.add_parser(
         'set',
@@ -75,6 +86,8 @@ def main():
         cli.do_upgrade()
     if args.cat:
         cli.do_cat()
+    if args.command == 'add':
+        cli.do_add_key(key=args.key)
     if args.command == 'set':
         cli.do_set(key_path=args.key_path, value=args.value)
     if args.command == 'rm':
@@ -86,9 +99,16 @@ class CLI:
     IS_EXIST_CONFIG_FILE = Config.is_exist()
 
     def exit_with_not_exist(self):
+        """
+        Check whether existing the config file.
+
+        If existed, do nothing;
+        If not existed, exit the program with message.
+        """
         if self.IS_EXIST_CONFIG_FILE:
-            pass
+            return None
         else:
+            logging.warning("There is no existing config file.")
             sys.exit(1)
 
     @staticmethod
@@ -113,6 +133,15 @@ class CLI:
         with open(self.CONFIG_FILE_PATH, "r") as f:
             content = f.read()
         print(content)
+
+    def do_add_key(self, key):
+        self.exit_with_not_exist()
+        try:
+            Config().add_api_key(key)
+            sys.exit(0)
+        except Exception as e:
+            logging.error(f"Failed to add API key: {e}")
+            sys.exit(1)
 
     def do_set(self, key_path, value):
         self.exit_with_not_exist()
