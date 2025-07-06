@@ -11,6 +11,7 @@ import sys
 from typing import Dict, List, Set, Tuple
 
 import numpy as np
+import pandas as pd
 import tomllib
 
 from ..config import Config
@@ -53,7 +54,7 @@ class TexIV:
     VALVE_TYPE = texiv_cfg.get("filter").get("VALVE_TYPE")
     valve = texiv_cfg.get("filter").get("valve")
 
-    def __init__(self):
+    def __init__(self, valve: float = 0.0):
         self.chunker = Chunk()
         self.embedder = Embed(embed_type=self.embed_type,
                               model=self.MODEL,
@@ -62,6 +63,9 @@ class TexIV:
                               max_length=self.MAX_LENGTH,
                               is_async=self.IS_ASYNC)
         self.similar = Similarity()
+
+        if 0.0 < valve < 1.0:
+            self.valve = valve
         self.filter = Filter(valve=self.valve)
 
     @staticmethod
@@ -75,15 +79,17 @@ class TexIV:
                 "count": total_count,
                 "rate": rate}
 
-    def embed_keywords(self, keywords: List[str] | Set[str]) -> np.ndarray:
-        """Embed keywords using the embedder."""
-        if isinstance(keywords, set):
-            keywords = list(keywords)
-        return self.embedder.embed(keywords)
+    def _embed_keywords(self, kws: str | List[str] | Set[str]) -> np.ndarray:
+        if isinstance(kws, str):
+            keywords = set(kws.split())
+        elif isinstance(kws, set):
+            keywords = list(kws)
+        elif isinstance(kws, list):
+            keywords = list(set(kws))
+        else:
+            raise TypeError("Keywords must be a string, list, or set.")
 
-    def embed_stata_keywords(self, kws: str):
-        keywords = set(kws.split())
-        return self.embed_keywords(keywords)
+        return self.embedder.embed(keywords)
 
     def texiv_it(
             self,
@@ -119,10 +125,27 @@ class TexIV:
         return true_count, total_count, true_count / total_count
 
     def texiv_stata(self, texts: List[str], kws: str):
-        embedded_keywords = self.embed_stata_keywords(kws)
+        embedded_keywords = self._embed_keywords(kws)
         results = [
             self.texiv_one(text, embedded_keywords)
             for text in texts
         ]
         freqs, counts, rates = zip(*results)
         return list(freqs), list(counts), list(rates)
+
+    def texiv_df(self,
+                 df: pd.DataFrame,
+                 col_name: str,
+                 kws: List[str] | Set[str] | str) -> pd.DataFrame:
+        """Process a DataFrame with a specified column and keywords."""
+        embedded_keywords = self._embed_keywords(kws)
+        extract_col = df[col_name].astype(str).tolist()
+        results = [
+            self.texiv_one(text, embedded_keywords)
+            for text in extract_col
+        ]
+        freqs, counts, rates = zip(*results)
+        df[col_name+"freq"] = freqs
+        df[col_name+"count"] = counts
+        df[col_name+"rate"] = rates
+        return df
