@@ -70,10 +70,9 @@ class TexIV:
 
     @staticmethod
     def _description(
-            finial_filtered_data: np.ndarray
     ) -> Dict[str, float | int]:
-        true_count = int(np.sum(finial_filtered_data))
-        total_count = len(finial_filtered_data)
+        true_count = int(np.sum(final_filtered_data))
+        total_count = len(final_filtered_data)
         rate = true_count / total_count
         return {"freq": true_count,
                 "count": total_count,
