@@ -54,7 +54,8 @@ class TexIV:
     VALVE_TYPE = texiv_cfg.get("filter").get("VALVE_TYPE")
     valve = texiv_cfg.get("filter").get("valve")
 
-    def __init__(self, valve: float = 0.0):
+    def __init__(self, valve: float = 0.0, is_async: bool = True):
+        self.IS_ASYNC: bool = is_async & self.IS_ASYNC
         self.chunker = Chunk()
         self.embedder = Embed(embed_type=self.embed_type,
                               model=self.MODEL,

@@ -1,3 +1,4 @@
+import asyncio
 from typing import List
 
 from ..core import TexIV
@@ -5,10 +6,18 @@ from ..core import TexIV
 
 class StataTexIV:
     @staticmethod
-    def texiv(Data, varname: str, kws: str):
-        texiv = TexIV()
+    def texiv(Data,
+              varname: str,
+              kws: str,
+              is_async: bool = True):
+        texiv = TexIV(is_async=is_async)
         contents: List[str] = Data.get(varname)
-        freqs, counts, rates = texiv.texiv_stata(contents, kws)
+        if is_async:
+            freqs, counts, rates = asyncio.run(
+                texiv.async_texiv_stata(contents, kws)
+            )
+        else:
+            freqs, counts, rates = texiv.texiv_stata(contents, kws)
 
         true_count_varname = f"{varname}_freq"
         total_count_varname = f"{varname}_count"
