@@ -36,11 +36,15 @@ class Config:
                     self._init_set_config()
         finally:
             self.cfg = self._load_config()
-        self._embed_type = self.cfg.get("embed").get("EMBED_TYPE", "ollama").lower()
+        self._embed_type = self.cfg.get("embed").get(
+            "EMBED_TYPE", "ollama"
+        ).lower()
 
     def add_api_key(self, key: str) -> None:
         key_path = f"embed.{self._embed_type}.API_KEY"
-        now_key_list: List[str] = self.cfg.get("embed").get(self._embed_type).get("API_KEY")
+        now_key_list: List[str] = self.cfg.get(
+            "embed"
+        ).get(self._embed_type).get("API_KEY")
         self.set_config(key_path, now_key_list.append(key))
         return None
 

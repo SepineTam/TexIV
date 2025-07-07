@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import List, Type, Union
+from typing import List, Union
 
 import numpy as np
 from openai import AsyncOpenAI, OpenAI

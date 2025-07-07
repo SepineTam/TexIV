@@ -8,13 +8,11 @@
 # @File   : texiv.py
 import asyncio
 import sys
-from typing import Dict, List, Set, Tuple, Union, Any
+from typing import Dict, List, Set, Tuple
 
 import numpy as np
 import pandas as pd
 import tomllib
-
-from numpy import ndarray
 
 from ..config import Config
 from .chunk import Chunk
@@ -107,14 +105,16 @@ class TexIV:
                        content: str | List[str]) -> List[np.ndarray]:
         if isinstance(content, str):
             # if the upload content is one string
-            chunked_content: List[str] = self.chunker.segment_from_text(content)
+            chunked_content: List[str] = self.chunker.segment_from_text(
+                content)
             return [self._embed_chunked_content(chunked_content)]
         elif isinstance(content, list):
             # if there are lots of string which conducted into a list
             embedded_content_list: List[np.ndarray] = []
             for item in content:
                 chunked_item = self.chunker.segment_from_text(item)
-                embedded_content_list.append(self._embed_chunked_content(chunked_item))
+                embedded_content_list.append(
+                    self._embed_chunked_content(chunked_item))
             return embedded_content_list
         else:
             raise TypeError("Content must be a string or list.")
