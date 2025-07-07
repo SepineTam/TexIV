@@ -8,6 +8,7 @@ from openai import AsyncOpenAI, OpenAI
 from ..utils import list2nparray
 
 
+# TODO: 修改异步逻辑
 class Embed:
     _MAX_LENGTH = 64
 
@@ -79,6 +80,13 @@ class Embed:
                 return self._embed(text_batches)
         else:
             return self._embed(text_batches)
+
+    async def async_embed(self, input_text: List[str]) -> np.ndarray:
+        length = len(input_text)
+        logging.info(f"This Embedding Process has {length} texts to embed.")
+        text_batches: List[List[str]] = self._split_text(input_text)
+        embeddings = await self._async_embed(text_batches)
+        return embeddings
 
     def _embed(self, text_batches: List[List[str]]) -> np.ndarray:
         batch_embeddings = []

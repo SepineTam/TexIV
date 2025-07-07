@@ -6,13 +6,15 @@
 # @Author : Sepine Tam
 # @Email  : sepinetam@gmail.com
 # @File   : texiv.py
-
+import asyncio
 import sys
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Set, Tuple, Union, Any
 
 import numpy as np
 import pandas as pd
 import tomllib
+
+from numpy import ndarray
 
 from ..config import Config
 from .chunk import Chunk
@@ -66,10 +68,13 @@ class TexIV:
 
         if 0.0 < valve < 1.0:
             self.valve = valve
+        else:
+            self.valve = self.valve
         self.filter = Filter(valve=self.valve)
 
     @staticmethod
     def _description(
+            final_filtered_data: np.ndarray
     ) -> Dict[str, float | int]:
         true_count = int(np.sum(final_filtered_data))
         total_count = len(final_filtered_data)
@@ -90,6 +95,47 @@ class TexIV:
 
         return self.embedder.embed(keywords)
 
+    def _embed_chunked_content(self, content: List[str]) -> np.ndarray:
+        """Embed chunked content."""
+        return self.embedder.embed(content)
+
+    async def _async_embed_chunked_content(self, content: List[str]) -> np.ndarray:
+        """Async embed chunked content."""
+        return await self.embedder.async_embed(content)
+
+    def _embed_content(self,
+                       content: str | List[str]) -> List[np.ndarray]:
+        if isinstance(content, str):
+            # if the upload content is one string
+            chunked_content: List[str] = self.chunker.segment_from_text(content)
+            return [self._embed_chunked_content(chunked_content)]
+        elif isinstance(content, list):
+            # if there are lots of string which conducted into a list
+            embedded_content_list: List[np.ndarray] = []
+            for item in content:
+                chunked_item = self.chunker.segment_from_text(item)
+                embedded_content_list.append(self._embed_chunked_content(chunked_item))
+            return embedded_content_list
+        else:
+            raise TypeError("Content must be a string or list.")
+
+    async def _async_embed_content(self,
+                                   content: str | List[str]) -> List[np.ndarray]:
+        if isinstance(content, str):
+            chunked_content = self.chunker.segment_from_text(content)
+            return [await self._async_embed_chunked_content(chunked_content)]
+        elif isinstance(content, list):
+            tasks = [
+                self._async_embed_chunked_content(
+                    self.chunker.segment_from_text(item)
+                )
+                for item in content
+            ]
+            results_tuple = await asyncio.gather(*tasks)
+            return list(results_tuple)
+        else:
+            raise TypeError("Content must be a string or list.")
+
     def texiv_it(
             self,
             content: str,
@@ -108,11 +154,15 @@ class TexIV:
         return self._description(two_stage_filtered)
 
     def texiv_one(self,
-                  content: str,
+                  embedded_chunked_content: np.ndarray,
                   embedded_keywords: np.ndarray) -> Tuple[int, int, float]:
-        """Process a single content with keywords."""
-        chunked_content = self.chunker.segment_from_text(content)
-        embedded_chunked_content = self.embedder.embed(chunked_content)
+        """
+        Process a single content with keywords.
+
+        TODO: 把这个函数的content参数从现在的改成embedded_contents: List[np.ndarray]
+        """
+        # chunked_content = self.chunker.segment_from_text(content)
+        # embedded_chunked_content = self.embedder.embed(chunked_content)
         dist_array = self.similar.similarity(embedded_chunked_content,
                                              embedded_keywords)
 
@@ -124,10 +174,21 @@ class TexIV:
         return true_count, total_count, true_count / total_count
 
     def texiv_stata(self, texts: List[str], kws: str):
+        embedded_texts = self._embed_content(texts)
         embedded_keywords = self._embed_keywords(kws)
         results = [
-            self.texiv_one(text, embedded_keywords)
-            for text in texts
+            self.texiv_one(embedded_text, embedded_keywords)
+            for embedded_text in embedded_texts
+        ]
+        freqs, counts, rates = zip(*results)
+        return list(freqs), list(counts), list(rates)
+
+    async def async_texiv_stata(self, texts: List[str], kws: str):
+        embedded_texts = await self._async_embed_content(texts)
+        embedded_keywords = self._embed_keywords(kws)
+        results = [
+            self.texiv_one(embedded_text, embedded_keywords)
+            for embedded_text in embedded_texts
         ]
         freqs, counts, rates = zip(*results)
         return list(freqs), list(counts), list(rates)
@@ -139,12 +200,32 @@ class TexIV:
         """Process a DataFrame with a specified column and keywords."""
         embedded_keywords = self._embed_keywords(kws)
         extract_col = df[col_name].astype(str).tolist()
+
+        embedded_texts = self._embed_content(extract_col)
         results = [
-            self.texiv_one(text, embedded_keywords)
-            for text in extract_col
+            self.texiv_one(embedded_text, embedded_keywords)
+            for embedded_text in embedded_texts
         ]
         freqs, counts, rates = zip(*results)
-        df[col_name+"freq"] = freqs
-        df[col_name+"count"] = counts
-        df[col_name+"rate"] = rates
+        df[col_name + "_freq"] = freqs
+        df[col_name + "_count"] = counts
+        df[col_name + "_rate"] = rates
+        return df
+
+    async def async_texiv_df(self,
+                             df: pd.DataFrame,
+                             col_name: str,
+                             kws: List[str] | Set[str] | str) -> pd.DataFrame:
+        """Async process a DataFrame with a specified column and keywords."""
+        embedded_keywords = self._embed_keywords(kws)
+        extract_col = df[col_name].astype(str).tolist()
+        embedded_texts = await self._async_embed_content(extract_col)
+        results = [
+            self.texiv_one(embedded_text, embedded_keywords)
+            for embedded_text in embedded_texts
+        ]
+        freqs, counts, rates = zip(*results)
+        df[col_name + "_freq"] = freqs
+        df[col_name + "_count"] = counts
+        df[col_name + "_rate"] = rates
         return df
