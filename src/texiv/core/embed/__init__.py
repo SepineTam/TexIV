@@ -7,6 +7,7 @@
 # @Email  : sepinetam@gmail.com
 # @File   : __init__.py
 
+import time
 import asyncio
 import logging
 from typing import List, Union
@@ -20,6 +21,7 @@ from ..utils import list2nparray
 # TODO: 修改异步逻辑
 class Embed:
     _MAX_LENGTH = 64
+    retry_times = 3
 
     def __init__(self,
                  embed_type: str = None,
@@ -27,6 +29,7 @@ class Embed:
                  base_url: str = None,
                  api_key: List[str] = None,
                  max_length: int = None,
+                 retry_times: int = 0,
                  is_async: bool = True):
         self.embed_type = embed_type
         self.model = model
@@ -58,6 +61,12 @@ class Embed:
             self._MAX_LENGTH = max_length
         else:
             self._MAX_LENGTH = 0
+
+        if retry_times:
+            self.retry_times = retry_times
+        else:
+            self.retry_times = self.retry_times
+
         self.is_async = is_async
 
     def _next_client(self,
@@ -112,23 +121,37 @@ class Embed:
 
     def _bench_embed(self, batch: List[str]) -> np.ndarray:
         client = self._next_client(is_async=False)
-        resp = client.embeddings.create(
-            model=self.model,
-            input=batch
-        )
-        vectors = [record.embedding for record in resp.data]
-        embeddings = list2nparray(vectors)
-        return embeddings
+        for attempt in range(self.retry_times):
+            try:
+                resp = client.embeddings.create(
+                    model=self.model,
+                    input=batch
+                )
+                vectors = [record.embedding for record in resp.data]
+                embeddings = list2nparray(vectors)
+                return embeddings
+            except Exception as e:
+                logging.warning(f"Sync embed attempt {attempt + 1} failed: {e}")
+                if attempt == self.retry_times - 1:
+                    raise
+                time.sleep(2 ** attempt)
 
     async def _async_bench_embed(self, batch: List[str]) -> np.ndarray:
         async_client = self._next_client(is_async=True)
-        resp = await async_client.embeddings.create(
-            model=self.model,
-            input=batch
-        )
-        vectors = [record.embedding for record in resp.data]
-        embeddings = list2nparray(vectors)
-        return embeddings
+        for attempt in range(self.retry_times):
+            try:
+                resp = await async_client.embeddings.create(
+                    model=self.model,
+                    input=batch
+                )
+                vectors = [record.embedding for record in resp.data]
+                embeddings = list2nparray(vectors)
+                return embeddings
+            except Exception as e:
+                logging.warning(f"Sync embed attempt {attempt + 1} failed: {e}")
+                if attempt == self.retry_times - 1:
+                    raise
+                time.sleep(2 ** attempt)
 
     def _split_text(self,
                     input_text: List[str],
@@ -153,13 +176,19 @@ class Embed:
 
 
 if __name__ == "__main__":
+    from texiv import TexIV
+    texiv = TexIV()
+
     embedder = Embed(
         embed_type="openai",
         model="BAAI/bge-m3",
         base_url="https://api.siliconflow.cn/v1",
-        api_key="sk-sgokfzyabbzwfylktgwtwionmuexdxgiyzzofmcvdsdvkbqw")
-    content = "滚滚长江东逝水，浪花淘尽英雄。我曾经仰望天空，想数清楚天空中的云朵到底在想写什么，可是我终究是无法靠近，无法知道它到底在哪里。"
-    embeddings = embedder.embed([content])
+        api_key=texiv.API_KEY
+    )
+    content_1 = "滚滚长江东逝水，浪花淘尽英雄。我曾经仰望天空，想数清楚天空中的云朵到底在想写什么，可是我终究是无法靠近，无法知道它到底在哪里。"
+    content_2 = "滚滚长江东逝水，浪花淘尽英雄。我曾经仰望天空，想数清楚天空中的云朵到底在想写什么，可是我终究是无法靠近，无法知道它到底在哪里。"
+    content_3 = "滚滚长江东逝水，浪花淘尽英雄。我曾经仰望天空，想数清楚天空中的云朵到底在想写什么，可是我终究是无法靠近，无法知道它到底在哪里。"
+    embeddings = asyncio.run(embedder.async_embed([content_1, content_2, content_3]))
     print(embeddings)
     print(type(embeddings))
     print(embeddings.shape)
