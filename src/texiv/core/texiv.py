@@ -155,16 +155,14 @@ class TexIV:
         two_stage_filtered = self.filter.two_stage_filter(filtered)
         return self._description(two_stage_filtered)
 
-    def texiv_one(self,
-                  embedded_chunked_content: np.ndarray,
-                  embedded_keywords: np.ndarray) -> Tuple[int, int, float]:
+    def _texiv_embedded(self,
+                        embedded_chunked_content: np.ndarray,
+                        embedded_keywords: np.ndarray) -> Tuple[int,
+                                                                int,
+                                                                float]:
         """
         Process a single content with keywords.
-
-        TODO: 把这个函数的content参数从现在的改成embedded_contents: List[np.ndarray]
         """
-        # chunked_content = self.chunker.segment_from_text(content)
-        # embedded_chunked_content = self.embedder.embed(chunked_content)
         dist_array = self.similar.similarity(embedded_chunked_content,
                                              embedded_keywords)
 
@@ -179,17 +177,7 @@ class TexIV:
         embedded_texts = self._embed_content(texts)
         embedded_keywords = self._embed_keywords(kws)
         results = [
-            self.texiv_one(embedded_text, embedded_keywords)
-            for embedded_text in embedded_texts
-        ]
-        freqs, counts, rates = zip(*results)
-        return list(freqs), list(counts), list(rates)
-
-    async def async_texiv_stata(self, texts: List[str], kws: str):
-        embedded_texts = await self._async_embed_content(texts)
-        embedded_keywords = self._embed_keywords(kws)
-        results = [
-            self.texiv_one(embedded_text, embedded_keywords)
+            self._texiv_embedded(embedded_text, embedded_keywords)
             for embedded_text in embedded_texts
         ]
         freqs, counts, rates = zip(*results)
@@ -205,25 +193,7 @@ class TexIV:
 
         embedded_texts = self._embed_content(extract_col)
         results = [
-            self.texiv_one(embedded_text, embedded_keywords)
-            for embedded_text in embedded_texts
-        ]
-        freqs, counts, rates = zip(*results)
-        df[col_name + "_freq"] = freqs
-        df[col_name + "_count"] = counts
-        df[col_name + "_rate"] = rates
-        return df
-
-    async def async_texiv_df(self,
-                             df: pd.DataFrame,
-                             col_name: str,
-                             kws: List[str] | Set[str] | str) -> pd.DataFrame:
-        """Async process a DataFrame with a specified column and keywords."""
-        embedded_keywords = self._embed_keywords(kws)
-        extract_col = df[col_name].astype(str).tolist()
-        embedded_texts = await self._async_embed_content(extract_col)
-        results = [
-            self.texiv_one(embedded_text, embedded_keywords)
+            self._texiv_embedded(embedded_text, embedded_keywords)
             for embedded_text in embedded_texts
         ]
         freqs, counts, rates = zip(*results)

@@ -7,9 +7,9 @@
 # @Email  : sepinetam@gmail.com
 # @File   : __init__.py
 
-import time
 import asyncio
 import logging
+import time
 from typing import List, Union
 
 import numpy as np
@@ -131,7 +131,8 @@ class Embed:
                 embeddings = list2nparray(vectors)
                 return embeddings
             except Exception as e:
-                logging.warning(f"Sync embed attempt {attempt + 1} failed: {e}")
+                logging.warning(
+                    f"Sync embed attempt {attempt + 1} failed: {e}")
                 if attempt == self.retry_times - 1:
                     raise
                 time.sleep(2 ** attempt)
@@ -148,7 +149,8 @@ class Embed:
                 embeddings = list2nparray(vectors)
                 return embeddings
             except Exception as e:
-                logging.warning(f"Sync embed attempt {attempt + 1} failed: {e}")
+                logging.warning(
+                    f"Sync embed attempt {attempt + 1} failed: {e}")
                 if attempt == self.retry_times - 1:
                     raise
                 time.sleep(2 ** attempt)
@@ -188,7 +190,8 @@ if __name__ == "__main__":
     content_1 = "滚滚长江东逝水，浪花淘尽英雄。我曾经仰望天空，想数清楚天空中的云朵到底在想写什么，可是我终究是无法靠近，无法知道它到底在哪里。"
     content_2 = "滚滚长江东逝水，浪花淘尽英雄。我曾经仰望天空，想数清楚天空中的云朵到底在想写什么，可是我终究是无法靠近，无法知道它到底在哪里。"
     content_3 = "滚滚长江东逝水，浪花淘尽英雄。我曾经仰望天空，想数清楚天空中的云朵到底在想写什么，可是我终究是无法靠近，无法知道它到底在哪里。"
-    embeddings = asyncio.run(embedder.async_embed([content_1, content_2, content_3]))
+    embeddings = asyncio.run(embedder.async_embed(
+        [content_1, content_2, content_3]))
     print(embeddings)
     print(type(embeddings))
     print(embeddings.shape)
