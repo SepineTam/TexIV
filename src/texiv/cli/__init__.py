@@ -33,11 +33,11 @@ def main():
         help="Initialize TexIV configuration"
     )
 
-    # parser.add_argument(
-    #     "-U", "--upgrade",
-    #     action="store_true",
-    #     help="Upgrade TexIV configuration from old one"
-    # )
+    parser.add_argument(
+        "-U", "--upgrade",
+        action="store_true",
+        help="Upgrade TexIV configuration from old one"
+    )
 
     parser.add_argument(
         "--cat",
@@ -61,7 +61,6 @@ def main():
         help="New API KEY"
     )
 
-    """
     # Add set sub parser
     set_parser = subparsers.add_parser(
         'set',
@@ -85,7 +84,6 @@ def main():
         'key_path',
         help='Configuration key path to remove'
     )
-    """
 
     args = parser.parse_args()
 
