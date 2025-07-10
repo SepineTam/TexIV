@@ -24,6 +24,6 @@ python:
 from sfi import Data
 from texiv import StataTexIV
 
-def texiv_in_stata(var_name, kws, async):    StataTexIV().texiv(Data, var_name, kws, async)
+def texiv_in_stata(var_name, kws, is_async):    StataTexIV().texiv(Data, var_name, kws, is_async)
 
 end
