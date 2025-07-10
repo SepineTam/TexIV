@@ -7,6 +7,8 @@
 # @Email  : sepinetam@gmail.com
 # @File   : __init__.py
 
+import logging
+import sys
 from typing import List
 
 from ..core import TexIV
@@ -32,16 +34,22 @@ class StataTexIV:
         texiv = TexIV(is_async=is_async)
         contents: List[str] = Data.get(varname)
 
-        # back to do not support async in the sense of df-face
-        freqs, counts, rates = texiv.texiv_stata(contents, kws)
-
         true_count_varname = f"{varname}_freq"
         total_count_varname = f"{varname}_count"
         rate_varname = f"{varname}_rate"
 
-        Data.addVarInt(true_count_varname)
-        Data.addVarInt(total_count_varname)
-        Data.addVarFloat(rate_varname)
+        try:
+            Data.addVarInt(true_count_varname)
+            Data.addVarInt(total_count_varname)
+            Data.addVarFloat(rate_varname)
+        except SystemError as e:
+            logging.warning(f"System Error: {e}")
+            sys.exit(1)
+        except NameError as e:
+            logging.warning(f"Name Error: {e}")
+
+        # back to do not support async in the sense of df-face
+        freqs, counts, rates = texiv.texiv_stata(contents, kws)
 
         Data.store(true_count_varname, None, freqs)
         Data.store(total_count_varname, None, counts)
