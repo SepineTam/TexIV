@@ -7,19 +7,26 @@
 # @Email  : sepinetam@gmail.com
 # @File   : __init__.py
 
-import logging
-import sys
-from typing import List
+from typing import Dict, List
 
 from ..core import TexIV
 
 
 class StataTexIV:
     @staticmethod
-    def texiv(Data,
-              varname: str,
-              kws: str,
-              is_async: bool = True):
+    def is_exist_var(Data,
+                     *var_names) -> Dict[str, bool]:
+        result: Dict[str, bool] = {}
+        for var_name in var_names:
+            try:
+                Data.getVarIndex(var_name)
+                result[var_name] = True
+            except ValueError:
+                result[var_name] = False
+        return result
+
+    @staticmethod
+    def check_is_async(is_async) -> bool:
         if not isinstance(is_async, bool):
             if isinstance(is_async, int) or isinstance(is_async, float):
                 is_async = bool(is_async)
@@ -31,22 +38,37 @@ class StataTexIV:
                     is_async = True
         else:
             is_async = is_async
-        texiv = TexIV(is_async=is_async)
-        contents: List[str] = Data.get(varname)
+        return is_async
 
+    @staticmethod
+    def texiv(Data,
+              varname: str,
+              kws: str,
+              is_async: bool = True):
+        is_async = StataTexIV.check_is_async(is_async)
+        texiv = TexIV(is_async=is_async)
+
+        try:
+            contents: List[str] = Data.get(varname)
+        except ValueError as e:
+            raise NameError("Don't find the variable, please check the varname.") from e
+
+        # define the var name
         true_count_varname = f"{varname}_freq"
         total_count_varname = f"{varname}_count"
         rate_varname = f"{varname}_rate"
 
-        try:
-            Data.addVarInt(true_count_varname)
-            Data.addVarInt(total_count_varname)
-            Data.addVarFloat(rate_varname)
-        except SystemError as e:
-            logging.warning(f"System Error: {e}")
-            sys.exit(1)
-        except NameError as e:
-            logging.warning(f"Name Error: {e}")
+        var_exist_state = StataTexIV.is_exist_var(Data,
+                                                  true_count_varname,
+                                                  total_count_varname,
+                                                  rate_varname)
+        if any(var_exist_state.values()):
+            existing_vars = [var for var, exists in var_exist_state.items() if exists]
+            raise ValueError(f"Existing {existing_vars}, please drop them and retry.")
+
+        Data.addVarInt(true_count_varname)
+        Data.addVarInt(total_count_varname)
+        Data.addVarFloat(rate_varname)
 
         # back to do not support async in the sense of df-face
         freqs, counts, rates = texiv.texiv_stata(contents, kws)
