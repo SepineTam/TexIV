@@ -8,9 +8,7 @@ Version : 0.1.7
 capture program drop texiv
 program texiv
     version 17
-    syntax varname, kws(string) [async(integer 0 1)]
-
-    if ("`async'" == "") local async 1
+    syntax varname, kws(string) [async(integer 0 1 1)]
 
 	gettoken var_name : varlist
 
