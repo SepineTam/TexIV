@@ -10,8 +10,8 @@
 import asyncio
 import logging
 import time
-from typing import Deque, List, Set, Union
 from collections import deque
+from typing import Deque, List, Set, Union
 
 import numpy as np
 from openai import AsyncOpenAI, OpenAI
@@ -59,14 +59,16 @@ class Embed:
         # initialize pools
         self._idle_clients: Deque[OpenAI] = deque(self.clients)
         self._using_clients: Set[OpenAI] = set()
-        self._async_idle_clients: Deque[AsyncOpenAI] = deque(self.async_clients)
+        self._async_idle_clients: Deque[AsyncOpenAI] = deque(
+            self.async_clients)
         self._async_using_clients: Set[AsyncOpenAI] = set()
 
         self._pool_lock = asyncio.Lock()
 
         if max_concurrency is None:
             max_concurrency = len(self.async_clients)
-        self._max_concurrency = max(1, min(len(self.async_clients), max_concurrency))
+        self._max_concurrency = max(
+            1, min(len(self.async_clients), max_concurrency))
         self._semaphore = asyncio.Semaphore(self._max_concurrency)
 
         if max_length:
@@ -91,7 +93,10 @@ class Embed:
             self._using_clients.add(client)
         return client
 
-    def _release_client(self, client: Union[OpenAI, AsyncOpenAI], is_async: bool) -> None:
+    def _release_client(self,
+                        client: Union[OpenAI,
+                                      AsyncOpenAI],
+                        is_async: bool) -> None:
         """Return client to idle pool from using pool."""
         if is_async:
             self._async_using_clients.discard(client)
