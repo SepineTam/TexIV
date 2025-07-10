@@ -16,7 +16,7 @@
 {title:Syntax}
 
 {p 8 15 2}
-{cmd:texiv} {varname} {cmd:,} {opt kws(string)}
+{cmd:texiv} {varname} {cmd:,} {opt kws(string)} [{opt async(integer)}]
 
 {marker description}{...}
 {title:Description}
@@ -30,6 +30,10 @@ specified keywords to generate numerical indicators that can be used as instrume
 This command requires that you have properly configured your Python environment and installed the
 corresponding Python package.
 
+{pstd}
+By default, {cmd:texiv} performs text embedding asynchronously for better performance.
+Use the {cmd:async(0)} option to disable asynchronous processing if needed.
+
 {marker options}{...}
 {title:Options}
 
@@ -37,11 +41,19 @@ corresponding Python package.
 {opt kws(string)} specifies the keywords to use for text analysis. This is a required option.
 Keywords should be separated by spaces and enclosed in quotes.
 
+{phang}
+{opt async(integer)} controls whether the command processes the texts
+asynchronously. {cmd:async(1)} (default) enables asynchronous embedding,
+while {cmd:async(0)} forces synchronous processing.
+
 {marker examples}{...}
 {title:Examples}
 
 {pstd}Transform a text variable named {cmd:reports} using digitalization-related keywords:{p_end}
 {phang2}{cmd:. texiv reports, kws("digitalization intelligent artificial_intelligence technology_innovation cloud_computing IoT")}{p_end}
+
+{pstd}Run synchronously if you encounter issues with async processing:{p_end}
+{phang2}{cmd:. texiv reports, kws("kws1 kws2 kws3") async(0)}{p_end}
 
 {pstd}For Chinese text analysis:{p_end}
 {phang2}{cmd:. texiv reports, kws("数字化 智能化 人工智能 科技创新 云计算 物联网")}{p_end}
