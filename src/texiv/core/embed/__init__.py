@@ -30,7 +30,7 @@ class Embed:
                  base_url: str = None,
                  api_key: List[str] = None,
                  max_length: int = None,
-                 retry_times: int = 0,
+                 retry_times: int = None,
                  is_async: bool = True,
                  max_concurrency: int | None = None):
         self.embed_type = embed_type
