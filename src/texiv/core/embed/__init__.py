@@ -18,7 +18,6 @@ from openai import AsyncOpenAI, OpenAI
 from ..utils import list2nparray
 
 
-# TODO: 修改异步逻辑
 class Embed:
     _MAX_LENGTH = 64
     retry_times = 3
