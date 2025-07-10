@@ -10,7 +10,8 @@
 import asyncio
 import logging
 import time
-from typing import List, Union
+from typing import Deque, List, Set, Union
+from collections import deque
 
 import numpy as np
 from openai import AsyncOpenAI, OpenAI
@@ -29,8 +30,9 @@ class Embed:
                  base_url: str = None,
                  api_key: List[str] = None,
                  max_length: int = None,
-                 retry_times: int = 0,
-                 is_async: bool = True):
+                 retry_times: int = None,
+                 is_async: bool = True,
+                 max_concurrency: int | None = None):
         self.embed_type = embed_type
         self.model = model
 
@@ -41,8 +43,6 @@ class Embed:
                 api_key = ["ollama"]
         self.base_url = base_url
         self.api_key = api_key or []
-
-        self._api_index = 0
 
         self.clients: List[OpenAI] = [
             OpenAI(
@@ -57,6 +57,19 @@ class Embed:
             ) for key in self.api_key
         ]
 
+        # initialize pools
+        self._idle_clients: Deque[OpenAI] = deque(self.clients)
+        self._using_clients: Set[OpenAI] = set()
+        self._async_idle_clients: Deque[AsyncOpenAI] = deque(self.async_clients)
+        self._async_using_clients: Set[AsyncOpenAI] = set()
+
+        self._pool_lock = asyncio.Lock()
+
+        if max_concurrency is None:
+            max_concurrency = len(self.async_clients)
+        self._max_concurrency = max(1, min(len(self.async_clients), max_concurrency))
+        self._semaphore = asyncio.Semaphore(self._max_concurrency)
+
         if max_length:
             self._MAX_LENGTH = max_length
         else:
@@ -69,19 +82,24 @@ class Embed:
 
         self.is_async = is_async
 
-    def _next_client(self,
-                     is_async: bool
-                     ) -> Union[OpenAI, AsyncOpenAI]:
-        if not self.clients:
-            self.clients = [OpenAI(base_url=self.base_url)]
-            self.async_clients = [AsyncOpenAI(base_url=self.base_url)]
-        index = self._api_index % len(self.clients)
-        self._api_index += 1
-
+    def _acquire_client(self, is_async: bool) -> Union[OpenAI, AsyncOpenAI]:
+        """Get a client from idle pool and put it in using pool."""
         if is_async:
-            return self.async_clients[index]
+            client = self._async_idle_clients.popleft()
+            self._async_using_clients.add(client)
         else:
-            return self.clients[index]
+            client = self._idle_clients.popleft()
+            self._using_clients.add(client)
+        return client
+
+    def _release_client(self, client: Union[OpenAI, AsyncOpenAI], is_async: bool) -> None:
+        """Return client to idle pool from using pool."""
+        if is_async:
+            self._async_using_clients.discard(client)
+            self._async_idle_clients.append(client)
+        else:
+            self._using_clients.discard(client)
+            self._idle_clients.append(client)
 
     def embed(self, input_text: List[str]) -> np.ndarray:
         length = len(input_text)
@@ -120,40 +138,49 @@ class Embed:
         return np.concatenate(batch_embeddings, axis=0)
 
     def _bench_embed(self, batch: List[str]) -> np.ndarray:
-        client = self._next_client(is_async=False)
-        for attempt in range(self.retry_times):
-            try:
-                resp = client.embeddings.create(
-                    model=self.model,
-                    input=batch
-                )
-                vectors = [record.embedding for record in resp.data]
-                embeddings = list2nparray(vectors)
-                return embeddings
-            except Exception as e:
-                logging.warning(
-                    f"Sync embed attempt {attempt + 1} failed: {e}")
-                if attempt == self.retry_times - 1:
-                    raise
-                time.sleep(2 ** attempt)
+        client = self._acquire_client(is_async=False)
+        try:
+            for attempt in range(self.retry_times):
+                try:
+                    resp = client.embeddings.create(
+                        model=self.model,
+                        input=batch
+                    )
+                    vectors = [record.embedding for record in resp.data]
+                    embeddings = list2nparray(vectors)
+                    return embeddings
+                except Exception as e:
+                    logging.warning(
+                        f"Sync embed attempt {attempt + 1} failed: {e}")
+                    if attempt == self.retry_times - 1:
+                        raise
+                    time.sleep(2 ** attempt)
+        finally:
+            self._release_client(client, is_async=False)
 
     async def _async_bench_embed(self, batch: List[str]) -> np.ndarray:
-        async_client = self._next_client(is_async=True)
-        for attempt in range(self.retry_times):
+        async with self._semaphore:
+            async with self._pool_lock:
+                async_client = self._acquire_client(is_async=True)
             try:
-                resp = await async_client.embeddings.create(
-                    model=self.model,
-                    input=batch
-                )
-                vectors = [record.embedding for record in resp.data]
-                embeddings = list2nparray(vectors)
-                return embeddings
-            except Exception as e:
-                logging.warning(
-                    f"Sync embed attempt {attempt + 1} failed: {e}")
-                if attempt == self.retry_times - 1:
-                    raise
-                time.sleep(2 ** attempt)
+                for attempt in range(self.retry_times):
+                    try:
+                        resp = await async_client.embeddings.create(
+                            model=self.model,
+                            input=batch
+                        )
+                        vectors = [record.embedding for record in resp.data]
+                        embeddings = list2nparray(vectors)
+                        return embeddings
+                    except Exception as e:
+                        logging.warning(
+                            f"Sync embed attempt {attempt + 1} failed: {e}")
+                        if attempt == self.retry_times - 1:
+                            raise
+                        time.sleep(2 ** attempt)
+            finally:
+                async with self._pool_lock:
+                    self._release_client(async_client, is_async=True)
 
     def _split_text(self,
                     input_text: List[str],
