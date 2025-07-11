@@ -34,7 +34,7 @@ def main():
     )
 
     parser.add_argument(
-        "-U", "--upgrade",
+        "-u", "--upgrade",
         action="store_true",
         help="Upgrade TexIV configuration from old one"
     )
