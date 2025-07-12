@@ -9,11 +9,11 @@
 
 import logging
 import os
+from pathlib import Path
 from typing import List, Set, Union
 
 import jieba
 import pandas as pd
-from pathlib import Path
 
 
 def merge_multi_stopwords(file_paths: List[str]) -> Set[str]:

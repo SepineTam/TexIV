@@ -215,7 +215,10 @@ class TexIV:
         return df
 
 
-def _write_result_to_df(df: pd.DataFrame, col_name: str, results: Tuple) -> pd.DataFrame:
+def _write_result_to_df(
+        df: pd.DataFrame,
+        col_name: str,
+        results: Tuple) -> pd.DataFrame:
     freqs, counts, rates = zip(*results)
     df[col_name + "_freq"] = freqs
     df[col_name + "_count"] = counts
