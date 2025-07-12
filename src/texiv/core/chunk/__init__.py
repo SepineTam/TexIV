@@ -13,7 +13,7 @@ from typing import List, Set, Union
 
 import jieba
 import pandas as pd
-import Path
+from pathlib import Path
 
 
 def merge_multi_stopwords(file_paths: List[str]) -> Set[str]:
