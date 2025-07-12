@@ -51,7 +51,8 @@ class StataTexIV:
         try:
             contents: List[str] = Data.get(varname)
         except ValueError as e:
-            raise NameError("Don't find the variable, please check the varname.") from e
+            raise NameError(
+                "Don't find the variable, please check the varname.") from e
 
         # define the var name
         true_count_varname = f"{varname}_freq"
@@ -63,8 +64,10 @@ class StataTexIV:
                                                   total_count_varname,
                                                   rate_varname)
         if any(var_exist_state.values()):
-            existing_vars = [var for var, exists in var_exist_state.items() if exists]
-            raise ValueError(f"Existing {existing_vars}, please drop them and retry.")
+            existing_vars = [var for var,
+                             exists in var_exist_state.items() if exists]
+            raise ValueError(
+                f"Existing {existing_vars}, please drop them and retry.")
 
         Data.addVarInt(true_count_varname)
         Data.addVarInt(total_count_varname)

@@ -9,9 +9,11 @@
 
 import logging
 import os
-from typing import List, Set
+from typing import List, Set, Union
 
 import jieba
+import pandas as pd
+import Path
 
 
 def merge_multi_stopwords(file_paths: List[str]) -> Set[str]:
@@ -73,6 +75,24 @@ class Chunk:
 
     def segment_from_text(self, text: str) -> List[str]:
         return self._base_segment(text)
+
+
+def count_token(file_path: Union[str, Path], column: str) -> int:
+    file_path = Path(file_path)
+    if not file_path.exists():
+        raise FileNotFoundError(f"File not found: {file_path}")
+    df = pd.read_csv(file_path)
+    if column not in df.columns:
+        raise ValueError(f"{column} not found in the CSV file")
+
+    chunker = Chunk()
+    total = 0
+
+    for cell in df[column].astype(str):
+        tokens = chunker.segment_from_text(cell)
+        total += len(tokens)
+
+    return total
 
 
 if __name__ == "__main__":
