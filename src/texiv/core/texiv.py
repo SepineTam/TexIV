@@ -198,6 +198,23 @@ class TexIV:
         ]
         df = _write_result_to_df(df, col_name, results)
         return df
+
+    def texiv_api(self,
+                  df: pd.DataFrame,
+                  col_name: str,
+                  kws: List[str]) -> pd.DataFrame:
+        embedded_keywords = self._embed_keywords(kws)
+        extract_col = df[col_name].astype(str).tolist()
+        embedded_texts = self._embed_content(extract_col)
+
+        results = [
+            self._texiv_embedded(embedded_text, embedded_keywords)
+            for embedded_text in embedded_texts
+        ]
+        df = _write_result_to_df(df, col_name, results)
+        return df
+
+
 def _write_result_to_df(df: pd.DataFrame, col_name: str, results: Tuple) -> pd.DataFrame:
     freqs, counts, rates = zip(*results)
     df[col_name + "_freq"] = freqs
