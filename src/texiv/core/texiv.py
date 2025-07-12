@@ -196,8 +196,11 @@ class TexIV:
             self._texiv_embedded(embedded_text, embedded_keywords)
             for embedded_text in embedded_texts
         ]
-        freqs, counts, rates = zip(*results)
-        df[col_name + "_freq"] = freqs
-        df[col_name + "_count"] = counts
-        df[col_name + "_rate"] = rates
+        df = _write_result_to_df(df, col_name, results)
         return df
+def _write_result_to_df(df: pd.DataFrame, col_name: str, results: Tuple) -> pd.DataFrame:
+    freqs, counts, rates = zip(*results)
+    df[col_name + "_freq"] = freqs
+    df[col_name + "_count"] = counts
+    df[col_name + "_rate"] = rates
+    return df
