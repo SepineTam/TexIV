@@ -14,6 +14,13 @@ dependencies = [
     "tomlkit>=0.13.3",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "pytest-mock>=3.11.1",
+]
+
 [project.scripts]
 texiv = "texiv.cli:main"
 
@@ -23,3 +30,15 @@ build-backend = "hatchling.build"
 
 [project.urls]
 Homepage = "https://github.com/sepinetam/texiv"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "cli: marks tests as CLI tests",
+]
