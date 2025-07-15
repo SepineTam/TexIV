@@ -50,7 +50,7 @@ valve = 0.618
         f.write(config_content)
         f.flush()
         yield f.name
-    finally:
+        # Cleanup after test
         if os.path.exists(f.name):
             os.unlink(f.name)
 
