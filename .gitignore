@@ -12,3 +12,6 @@ wheels/
 .idea/
 .vscode
 *.DS_Store
+
+# GitHub action log
+pytest.github.log/
