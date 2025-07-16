@@ -54,7 +54,8 @@ class Config:
         now_key_list: List[str] = self.cfg.get(
             "embed"
         ).get(self._embed_type).get("API_KEY")
-        self.set_config(key_path, now_key_list.append(key))
+        now_key_list.append(key)
+        self.set_config(key_path, now_key_list)
         return None
 
     def _load_config(self):

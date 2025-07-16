@@ -240,6 +240,7 @@ class CLI:
         with open(self.CONFIG_FILE_PATH, "r") as f:
             content = f.read()
         print(content)
+        sys.exit(0)
 
     def do_add_key(self, key):
         self.exit_with_not_exist()
@@ -319,6 +320,7 @@ class CLI:
                 f.write(tomlkit.dumps(config))
 
             print(f"Successfully set {key_path} = {parsed_value}")
+            sys.exit(0)
 
         except Exception as e:
             logging.error(f"Failed to set configuration value: {e}")
@@ -392,6 +394,8 @@ class CLI:
             # Write back to file
             with open(config_path, "w") as f:
                 f.write(tomlkit.dumps(config))
+            
+            sys.exit(0)
 
         except Exception as e:
             logging.error(f"Failed to remove configuration key: {e}")
