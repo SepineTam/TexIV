@@ -66,8 +66,8 @@ def mock_config_paths(temp_config_file):
 def setup_test_env(monkeypatch, temp_config_file):
     """Setup test environment"""
     # Mock the config path
-    from src.texiv.cli import CLI
-    from src.texiv.config import Config
+    from texiv.cli import CLI
+    from texiv.config import Config
     
     original_config_path = CLI.CONFIG_FILE_PATH
     original_is_exist = CLI.IS_EXIST_CONFIG_FILE

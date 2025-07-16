@@ -14,7 +14,7 @@ import pytest
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-from src.texiv.cli import CLI, main
+from texiv.cli import CLI, main
 
 
 class TestCLI:
