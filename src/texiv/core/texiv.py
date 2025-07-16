@@ -18,44 +18,58 @@ import tomllib
 from ..config import Config
 from .chunk import Chunk
 from .embed import Embed
-from .filter import Filter
 from .similarity import Similarity
-from .utils import yes_or_no
+from .filter import Filter
 
 
 class TexIV:
     CONFIG_FILE_PATH = Config.CONFIG_FILE_PATH
-    if not Config.is_exist():
-        print(
-            "Configuration file not found. "
-            "Please ensure the file exist!\n"
-            "You can use `texiv --init` in terminal to create a default config.")
-        __is_init = yes_or_no("Do you want to create a default config file?")
-        if not __is_init:
-            sys.exit(1)
-        else:
-            Config()
-    with open(CONFIG_FILE_PATH, "rb") as f:
-        cfg = tomllib.load(f)
-
-    # embedding config
-    embed_type: str = cfg.get("embed").get("EMBED_TYPE").lower()
-    MAX_LENGTH: int = cfg.get("embed").get("MAX_LENGTH", 64)
-    IS_ASYNC: bool = cfg.get("embed").get("IS_ASYNC", False)
-    MODEL: str = cfg.get("embed").get(embed_type).get("MODEL")
-    BASE_URL: str = cfg.get("embed").get(embed_type).get("BASE_URL")
-    API_KEY: List[str] = cfg.get("embed").get(embed_type).get("API_KEY")
-
-    # texiv config
-    texiv_cfg = cfg.get("texiv")
-    stopwords_path = texiv_cfg.get("chunk").get("stopwords_path")
-    if stopwords_path == "":
-        stopwords_path = None
-    SIMILARITY_MTHD = texiv_cfg.get("similarity").get("MTHD")
-    VALVE_TYPE = texiv_cfg.get("filter").get("VALVE_TYPE")
-    valve = texiv_cfg.get("filter").get("valve")
-
+    
     def __init__(self, valve: float = 0.0, is_async: bool = True):
+        """
+        Initialize TexIV with configuration.
+        
+        Args:
+            valve: The threshold value for filtering (0.0-1.0)
+            is_async: Whether to use async operations
+        """
+        if not Config.is_exist():
+            # In test environment, skip interactive prompt
+            if 'pytest' not in sys.modules:
+                from .utils import yes_or_no
+                print(
+                    "Configuration file not found. "
+                    "Please ensure the file exist!\n"
+                    "You can use `texiv --init` in terminal to create a default config.")
+                __is_init = yes_or_no("Do you want to create a default config file?")
+                if not __is_init:
+                    sys.exit(1)
+                else:
+                    Config()
+            else:
+                raise FileNotFoundError("Configuration file not found")
+        
+        with open(self.CONFIG_FILE_PATH, "rb") as f:
+            self.cfg = tomllib.load(f)
+        
+        # embedding config
+        self.embed_type: str = self.cfg.get("embed").get("EMBED_TYPE").lower()
+        self.MAX_LENGTH: int = self.cfg.get("embed").get("MAX_LENGTH", 64)
+        self.IS_ASYNC: bool = self.cfg.get("embed").get("IS_ASYNC", False)
+        self.MODEL: str = self.cfg.get("embed").get(self.embed_type).get("MODEL")
+        self.BASE_URL: str = self.cfg.get("embed").get(self.embed_type).get("BASE_URL")
+        self.API_KEY: List[str] = self.cfg.get("embed").get(self.embed_type).get("API_KEY")
+
+        # texiv config
+        texiv_cfg = self.cfg.get("texiv")
+        stopwords_path = texiv_cfg.get("chunk").get("stopwords_path")
+        if stopwords_path == "":
+            stopwords_path = None
+        self.SIMILARITY_MTHD = texiv_cfg.get("similarity").get("MTHD")
+        self.VALVE_TYPE = texiv_cfg.get("filter").get("VALVE_TYPE")
+        self.valve = texiv_cfg.get("filter").get("valve")
+        
+        # Override async setting if specified
         self.IS_ASYNC: bool = is_async & self.IS_ASYNC
         self.chunker = Chunk()
         self.embedder = Embed(embed_type=self.embed_type,
