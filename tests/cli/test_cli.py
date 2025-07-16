@@ -8,6 +8,7 @@
 # @File   : test_cli.py
 
 import os
+import sys
 import tempfile
 import shutil
 import pytest
