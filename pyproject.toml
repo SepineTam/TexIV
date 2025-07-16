@@ -1,6 +1,6 @@
 [project]
 name = "TexIV"
-version = "0.1.8"
+version = "0.1.9"
 description = "A machine learning–based method for transforming text into instrumental variables (IV)."
 readme = "README.md"
 requires-python = ">=3.11"
