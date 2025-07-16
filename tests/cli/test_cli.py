@@ -79,28 +79,29 @@ valve = 0.618
         assert exc_info.value.code == 1
 
     @patch('texiv.config.Config.cli_init')
-    @patch('texiv.core.utils.yes_or_no', return_value=True)
-    def test_do_init_confirmed(self, mock_yes, mock_config_init):
+    def test_do_init_confirmed(self, mock_config_init):
         """Test do_init with user confirmation"""
-        with pytest.raises(SystemExit) as exc_info:
-            CLI.do_init()
-        assert exc_info.value.code == 0
+        def mock_input(msg):
+            return "y"
+        
+        result = CLI.do_init(input_func=mock_input)
+        assert result == 0
         mock_config_init.assert_called_once()
 
     @patch('texiv.config.Config.cli_init')
-    @patch('texiv.core.utils.yes_or_no', return_value=False)
-    def test_do_init_cancelled(self, mock_yes, mock_config_init):
+    def test_do_init_cancelled(self, mock_config_init):
         """Test do_init with user cancellation"""
-        with pytest.raises(SystemExit) as exc_info:
-            CLI.do_init()
-        assert exc_info.value.code == 0
+        def mock_input(msg):
+            return "n"
+        
+        result = CLI.do_init(input_func=mock_input)
+        assert result == 0
         mock_config_init.assert_not_called()
 
     def test_do_cat(self, capsys, cli_instance):
         """Test do_cat function displays config content"""
-        with pytest.raises(SystemExit) as exc_info:
-            cli_instance.do_cat()
-        assert exc_info.value.code == 0
+        result = cli_instance.do_cat()
+        assert result == 0
         
         captured = capsys.readouterr()
         assert "EMBED_TYPE" in captured.out
@@ -113,9 +114,8 @@ valve = 0.618
         cli.CONFIG_FILE_PATH = "/tmp/test.toml"
         cli.IS_EXIST_CONFIG_FILE = True
         
-        with pytest.raises(SystemExit) as exc_info:
-            cli.do_add_key("test-api-key")
-        assert exc_info.value.code == 0
+        result = cli.do_add_key("test-api-key")
+        assert result == 0
         mock_add_key.assert_called_once_with("test-api-key")
 
     @patch('texiv.config.Config.add_api_key')
@@ -127,34 +127,37 @@ valve = 0.618
         cli.CONFIG_FILE_PATH = "/tmp/test.toml"
         cli.IS_EXIST_CONFIG_FILE = True
         
-        with pytest.raises(SystemExit) as exc_info:
-            cli.do_add_key("invalid-key")
-        assert exc_info.value.code == 1
+        result = cli.do_add_key("invalid-key")
+        assert result == 1
 
     def test_do_set_string_value(self, cli_instance):
         """Test setting string configuration value"""
-        cli_instance.do_set("embed.openai.MODEL", "new-model")
+        result = cli_instance.do_set("embed.openai.MODEL", "new-model")
+        assert result == 0
         
         config_content = Path(cli_instance.CONFIG_FILE_PATH).read_text()
         assert "new-model" in config_content
 
     def test_do_set_numeric_value(self, cli_instance):
         """Test setting numeric configuration value"""
-        cli_instance.do_set("texiv.filter.valve", "0.95")
+        result = cli_instance.do_set("texiv.filter.valve", "0.95")
+        assert result == 0
         
         config_content = Path(cli_instance.CONFIG_FILE_PATH).read_text()
         assert "0.95" in config_content
 
     def test_do_set_boolean_value(self, cli_instance):
         """Test setting boolean configuration value"""
-        cli_instance.do_set("embed.IS_ASYNC", "true")
+        result = cli_instance.do_set("embed.IS_ASYNC", "true")
+        assert result == 0
         
         config_content = Path(cli_instance.CONFIG_FILE_PATH).read_text()
         assert "true" in config_content
 
     def test_do_set_list_value(self, cli_instance):
         """Test setting list configuration value"""
-        cli_instance.do_set("embed.openai.API_KEY", '["key1", "key2", "key3"]')
+        result = cli_instance.do_set("embed.openai.API_KEY", '["key1", "key2", "key3"]')
+        assert result == 0
         
         config_content = Path(cli_instance.CONFIG_FILE_PATH).read_text()
         assert '"key1"' in config_content
@@ -163,7 +166,8 @@ valve = 0.618
 
     def test_do_set_nested_key_creation(self, cli_instance):
         """Test creating nested keys automatically"""
-        cli_instance.do_set("test.section.new_key", "test_value")
+        result = cli_instance.do_set("test.section.new_key", "test_value")
+        assert result == 0
         
         config_content = Path(cli_instance.CONFIG_FILE_PATH).read_text()
         assert "[test.section]" in config_content or "new_key = \"test_value\"" in config_content
@@ -171,10 +175,12 @@ valve = 0.618
     def test_do_rm_with_default(self, cli_instance):
         """Test removing key with default value restoration"""
         # First set a custom value
-        cli_instance.do_set("texiv.filter.valve", "0.85")
+        result1 = cli_instance.do_set("texiv.filter.valve", "0.85")
+        assert result1 == 0
         
         # Then remove it to restore default
-        cli_instance.do_rm("texiv.filter.valve")
+        result2 = cli_instance.do_rm("texiv.filter.valve")
+        assert result2 == 0
         
         config_content = Path(cli_instance.CONFIG_FILE_PATH).read_text()
         assert "0.618" in config_content
@@ -182,10 +188,12 @@ valve = 0.618
     def test_do_rm_without_default(self, cli_instance):
         """Test removing key without default value"""
         # Add a custom key
-        cli_instance.do_set("custom.section.key", "value")
+        result1 = cli_instance.do_set("custom.section.key", "value")
+        assert result1 == 0
         
         # Remove it
-        cli_instance.do_rm("custom.section.key")
+        result2 = cli_instance.do_rm("custom.section.key")
+        assert result2 == 0
         
         config_content = Path(cli_instance.CONFIG_FILE_PATH).read_text()
         assert "custom.section.key" not in config_content
@@ -198,7 +206,8 @@ valve = 0.618
 
     def test_do_set_invalid_path(self, cli_instance):
         """Test setting value with invalid path handling"""
-        cli_instance.do_set("very.deep.nested.path", "value")
+        result = cli_instance.do_set("very.deep.nested.path", "value")
+        assert result == 0
         
         config_content = Path(cli_instance.CONFIG_FILE_PATH).read_text()
         assert "path" in config_content
@@ -214,9 +223,8 @@ old_key = "old_value"
         cli.CONFIG_FILE_PATH = str(old_config_path)
         cli.IS_EXIST_CONFIG_FILE = True
         
-        with pytest.raises(SystemExit) as exc_info:
-            cli.do_upgrade()
-        assert exc_info.value.code == 0
+        result = cli.do_upgrade()
+        assert result == 0
         
         # Check if backup file was created
         backup_files = list(Path(temp_config_dir).glob("*.backup.*"))
@@ -272,12 +280,9 @@ old_key = "old_value"
 
     def test_do_set_error_handling(self, cli_instance):
         """Test error handling in do_set"""
-        # This should not raise exception, but exit with 0 on success
-        # The test should check that it doesn't crash
-        try:
-            cli_instance.do_set("nonexistent", "value")
-        except SystemExit as e:
-            assert e.code == 0
+        # This should not raise exception, but return 0 on success
+        result = cli_instance.do_set("nonexistent", "value")
+        assert result == 0
 
     def test_do_rm_error_handling(self, cli_instance):
         """Test error handling in do_rm"""
@@ -293,12 +298,16 @@ class TestMainFunctionality:
         """Test main with init when config doesn't exist"""
         test_args = ['texiv', '--init']
         
+        def mock_input(msg):
+            return "n"  # Simulate user cancellation
+        
         with patch.object(sys, 'argv', test_args):
             with patch('texiv.cli.CLI.CONFIG_FILE_PATH', '/nonexistent/config.toml'):
                 with patch('texiv.cli.CLI.IS_EXIST_CONFIG_FILE', False):
-                    with pytest.raises(SystemExit) as exc_info:
-                        main()
-                    assert exc_info.value.code == 1
+                    with patch('builtins.input', mock_input):
+                        # init works even without config file, returns 0
+                        result = main()
+                        assert result == 0
 
     def test_main_with_cat_missing_config(self):
         """Test main with cat when config doesn't exist"""

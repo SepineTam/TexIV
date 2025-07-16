@@ -88,17 +88,19 @@ def main():
     args = parser.parse_args()
 
     if args.init:
-        cli.do_init()
+        return cli.do_init(input_func=input)
     if args.upgrade:
-        cli.do_upgrade()
+        return cli.do_upgrade()
     if args.cat:
-        cli.do_cat()
+        return cli.do_cat()
     if args.command == 'add':
-        cli.do_add_key(key=args.key)
+        return cli.do_add_key(key=args.key)
     if args.command == 'set':
-        cli.do_set(key_path=args.key_path, value=args.value)
+        return cli.do_set(key_path=args.key_path, value=args.value)
     if args.command == 'rm':
-        cli.do_rm(key_path=args.key_path)
+        return cli.do_rm(key_path=args.key_path)
+    
+    return 0
 
 
 class CLI:
@@ -119,14 +121,14 @@ class CLI:
             sys.exit(1)
 
     @staticmethod
-    def do_init():
+    def do_init(input_func=None):
         print(
             "You are initializing TexIV configuration...\n"
             "You must know that initializing will overwrite your current configuration.")
-        flag = yes_or_no("Do you want to continue?")
+        flag = yes_or_no("Do you want to continue?", input_func=input_func)
         if flag:
             Config.cli_init()
-        sys.exit(0)
+        return 0
 
     def do_upgrade(self):
         """
@@ -225,13 +227,13 @@ class CLI:
             print("- API_KEY values normalized to list format")
             print("- Backup created for safety")
 
-            sys.exit(0)
+            return 0
 
         except Exception as e:
             logging.error(f"Failed to upgrade configuration: {e}")
             print(f"Error during upgrade: {e}")
             print("Your original configuration remains unchanged.")
-            sys.exit(1)
+            return 1
 
     def do_cat(self):
         self.exit_with_not_exist()
@@ -240,16 +242,16 @@ class CLI:
         with open(self.CONFIG_FILE_PATH, "r") as f:
             content = f.read()
         print(content)
-        sys.exit(0)
+        return 0
 
     def do_add_key(self, key):
         self.exit_with_not_exist()
         try:
             Config().add_api_key(key)
-            sys.exit(0)
+            return 0
         except Exception as e:
             logging.error(f"Failed to add API key: {e}")
-            sys.exit(1)
+            return 1
 
     def do_set(self, key_path, value):
         """
@@ -320,12 +322,12 @@ class CLI:
                 f.write(tomlkit.dumps(config))
 
             print(f"Successfully set {key_path} = {parsed_value}")
-            sys.exit(0)
+            return 0
 
         except Exception as e:
             logging.error(f"Failed to set configuration value: {e}")
             print(f"Error setting {key_path}: {e}")
-            sys.exit(1)
+            return 1
 
     def do_rm(self, key_path):
         """
@@ -395,13 +397,17 @@ class CLI:
             with open(config_path, "w") as f:
                 f.write(tomlkit.dumps(config))
             
-            sys.exit(0)
+            return 0
 
         except Exception as e:
             logging.error(f"Failed to remove configuration key: {e}")
             print(f"Error removing {key_path}: {e}")
-            sys.exit(1)
+            return 1
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        sys.exit(main())
+    except KeyboardInterrupt:
+        print("\nOperation cancelled by user.")
+        sys.exit(1)

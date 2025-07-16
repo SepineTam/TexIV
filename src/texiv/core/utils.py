@@ -16,13 +16,18 @@ def list2nparray(data: List[List[float]]) -> np.ndarray:
     return np.array(data, dtype=np.float64)
 
 
-def yes_or_no(msg: str) -> bool:
+def yes_or_no(msg: str, input_func=None) -> bool:
     """Prompt user for yes or no input."""
+    input_func = input_func or input
     while True:
-        response = input(msg + "(Y/n): ").strip().lower()
-        if response in ('yes', 'y'):
-            return True
-        elif response in ('no', 'n'):
+        try:
+            response = input_func(msg + "(Y/n): ").strip().lower()
+            if response in ('yes', 'y'):
+                return True
+            elif response in ('no', 'n'):
+                return False
+            else:
+                print("Please answer with '[Y]es' or 'no'.")
+        except (EOFError, KeyboardInterrupt):
+            # Handle cases where input is not available (e.g., in tests)
             return False
-        else:
-            print("Please answer with '[Y]es' or 'no'.")
