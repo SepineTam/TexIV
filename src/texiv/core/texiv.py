@@ -9,13 +9,14 @@
 
 import asyncio
 import sys
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Set, Tuple, Optional
 
 import numpy as np
 import pandas as pd
 import tomllib
 
 from ..config import Config
+from ..utils import create_rich_helper
 from .chunk import Chunk
 from .embed import Embed
 from .similarity import Similarity
@@ -25,19 +26,22 @@ from .filter import Filter
 class TexIV:
     CONFIG_FILE_PATH = Config.CONFIG_FILE_PATH
     
-    def __init__(self, valve: float = 0.0, is_async: bool = True):
+    def __init__(self, valve: float = 0.0, is_async: bool = True, rich_helper=None):
         """
         Initialize TexIV with configuration.
         
         Args:
             valve: The threshold value for filtering (0.0-1.0)
             is_async: Whether to use async operations
+            rich_helper: RichHelper instance for rich output
         """
+        self.rich_helper = rich_helper or create_rich_helper()
+        
         if not Config.is_exist():
             # In test environment, skip interactive prompt
             if 'pytest' not in sys.modules:
                 from .utils import yes_or_no
-                print(
+                self.rich_helper.print_error(
                     "Configuration file not found. "
                     "Please ensure the file exist!\n"
                     "You can use `texiv --init` in terminal to create a default config.")
@@ -156,18 +160,59 @@ class TexIV:
             self,
             content: str,
             keywords: List[str],
-            stopwords: List[str] | None = None):
+            stopwords: List[str] | None = None) -> Dict[str, float | int]:
+        """Process text content with keywords to find instrumental variables.
+        
+        Args:
+            content: The text content to analyze
+            keywords: List of keywords to search for
+            stopwords: Optional list of stopwords to filter out
+            
+        Returns:
+            Dictionary containing processing results with freq, count, and rate
+        """
         if stopwords:
             self.chunker.load_stopwords(stopwords)
-        chunked_content = self.chunker.segment_from_text(content)
-        embedded_chunked_content = self.embedder.embed(chunked_content)
-        embedded_keywords = self.embedder.embed(keywords)
-        dist_array = self.similar.similarity(embedded_chunked_content,
-                                             embedded_keywords)
+            
+        with self.rich_helper.create_progress("Processing text analysis") as progress:
+            task = progress.add_task("Processing", total=5)
+            
+            # Step 1: Chunk content
+            chunked_content = self.chunker.segment_from_text(content)
+            progress.update(task, advance=1, description="Chunking content")
+            
+            # Step 2: Embed chunked content
+            embedded_chunked_content = self.embedder.embed(chunked_content)
+            progress.update(task, advance=1, description="Embedding content chunks")
+            
+            # Step 3: Embed keywords
+            embedded_keywords = self.embedder.embed(keywords)
+            progress.update(task, advance=1, description="Embedding keywords")
+            
+            # Step 4: Calculate similarity
+            dist_array = self.similar.similarity(embedded_chunked_content,
+                                                 embedded_keywords)
+            progress.update(task, advance=1, description="Calculating similarity")
+            
+            # Step 5: Filter results
+            filtered = self.filter.filter(dist_array)
+            two_stage_filtered = self.filter.two_stage_filter(filtered)
+            progress.update(task, advance=1, description="Filtering results")
 
-        filtered = self.filter.filter(dist_array)
-        two_stage_filtered = self.filter.two_stage_filter(filtered)
-        return self._description(two_stage_filtered)
+        results = self._description(two_stage_filtered)
+        
+        # Display results
+        self.rich_helper.display_status_panel(
+            "Analysis Results",
+            {
+                "Keywords Found": str(results["freq"]),
+                "Total Chunks": str(results["count"]),
+                "Match Rate": f"{results['rate']:.2%}",
+                "Keywords": ", ".join(keywords[:5]) + ("..." if len(keywords) > 5 else "")
+            }
+        )
+        
+        return results
 
     def _texiv_embedded(self,
                         embedded_chunked_content: np.ndarray,
@@ -187,46 +232,105 @@ class TexIV:
         total_count = len(two_stage_filtered)
         return true_count, total_count, true_count / total_count
 
-    def texiv_stata(self, texts: List[str], kws: str):
-        embedded_texts = self._embed_content(texts)
-        embedded_keywords = self._embed_keywords(kws)
-        results = [
-            self._texiv_embedded(embedded_text, embedded_keywords)
-            for embedded_text in embedded_texts
-        ]
-        freqs, counts, rates = zip(*results)
-        return list(freqs), list(counts), list(rates)
+    def texiv_stata(self, texts: List[str], kws: str) -> Tuple[List[int], List[int], List[float]]:
+        """Process multiple texts with keywords for Stata integration.
+        
+        Args:
+            texts: List of text strings to analyze
+            kws: Keywords string to search for
+            
+        Returns:
+            Tuple of (frequencies, counts, rates) lists
+        """
+        total_texts = len(texts)
+        
+        with self.rich_helper.create_progress(f"Processing {total_texts} texts") as progress:
+            task = progress.add_task("Processing texts", total=total_texts)
+            
+            embedded_texts = self._embed_content(texts)
+            embedded_keywords = self._embed_keywords(kws)
+            
+            results = []
+            for i, embedded_text in enumerate(embedded_texts):
+                result = self._texiv_embedded(embedded_text, embedded_keywords)
+                results.append(result)
+                progress.update(task, advance=1, description=f"Processing text {i+1}/{total_texts}")
+            
+            freqs, counts, rates = zip(*results)
+            
+            # Display summary
+            summary = {
+                "Total Texts": str(total_texts),
+                "Avg Keywords Found": f"{sum(freqs)/len(freqs):.2f}",
+                "Avg Match Rate": f"{sum(rates)/len(rates):.2%}",
+                "Keywords": kws
+            }
+            self.rich_helper.display_results_table("Stata Processing Summary", summary)
+            
+            return list(freqs), list(counts), list(rates)
 
     def texiv_df(self,
                  df: pd.DataFrame,
                  col_name: str,
                  kws: List[str] | Set[str] | str) -> pd.DataFrame:
-        """Process a DataFrame with a specified column and keywords."""
+        """Process a DataFrame with a specified column and keywords.
+        
+        Args:
+            df: pandas DataFrame containing the data
+            col_name: name of the column to analyze
+            kws: keywords to search for (string, list, or set)
+            
+        Returns:
+            DataFrame with additional columns for analysis results
+        """
+        total_rows = len(df)
         embedded_keywords = self._embed_keywords(kws)
         extract_col = df[col_name].astype(str).tolist()
 
-        embedded_texts = self._embed_content(extract_col)
-        results = [
-            self._texiv_embedded(embedded_text, embedded_keywords)
-            for embedded_text in embedded_texts
-        ]
+        with self.rich_helper.create_progress(f"Processing DataFrame ({total_rows} rows)") as progress:
+            task = progress.add_task("Processing rows", total=total_rows)
+            
+            embedded_texts = self._embed_content(extract_col)
+            results = []
+            for i, embedded_text in enumerate(embedded_texts):
+                result = self._texiv_embedded(embedded_text, embedded_keywords)
+                results.append(result)
+                progress.update(task, advance=1, description=f"Processing row {i+1}/{total_rows}")
+
         df = _write_result_to_df(df, col_name, results)
+        
+        # Display summary
+        freqs = df[col_name + "_freq"].tolist()
+        rates = df[col_name + "_rate"].tolist()
+        
+        summary = {
+            "Total Rows": str(total_rows),
+            "Processed Column": col_name,
+            "Keywords": str(kws) if len(str(kws)) <= 50 else str(kws)[:47] + "...",
+            "Avg Keywords Found": f"{sum(freqs)/len(freqs):.2f}",
+            "Avg Match Rate": f"{sum(rates)/len(rates):.2%}",
+            "Max Keywords Found": str(max(freqs)),
+            "Min Keywords Found": str(min(freqs))
+        }
+        self.rich_helper.display_results_table("DataFrame Processing Summary", summary)
+        
         return df
 
     def texiv_api(self,
                   df: pd.DataFrame,
                   col_name: str,
                   kws: List[str]) -> pd.DataFrame:
-        embedded_keywords = self._embed_keywords(kws)
-        extract_col = df[col_name].astype(str).tolist()
-        embedded_texts = self._embed_content(extract_col)
-
-        results = [
-            self._texiv_embedded(embedded_text, embedded_keywords)
-            for embedded_text in embedded_texts
-        ]
-        df = _write_result_to_df(df, col_name, results)
-        return df
+        """API-style processing of DataFrame with keywords.
+        
+        Args:
+            df: pandas DataFrame containing the data
+            col_name: name of the column to analyze
+            kws: list of keywords to search for
+            
+        Returns:
+            DataFrame with additional columns for analysis results
+        """
+        return self.texiv_df(df, col_name, kws)
 
 
 def _write_result_to_df(
