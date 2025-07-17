@@ -11,12 +11,13 @@ import argparse
 import logging
 import sys
 
+from rich.console import Console
+from rich.panel import Panel
+
 from .. import __version__
 from ..config import Config
 from ..core.utils import yes_or_no
 from ..utils import create_rich_helper
-from rich.console import Console
-from rich.panel import Panel
 
 
 def main():
@@ -101,7 +102,7 @@ def main():
     )
 
     args = parser.parse_args()
-    
+
     # Create rich helper with quiet mode support
     rich_helper = create_rich_helper(quiet=args.quiet)
 
@@ -114,15 +115,18 @@ def main():
     if args.command == 'add':
         return cli.do_add_key(key=args.key, rich_helper=rich_helper)
     if args.command == 'set':
-        return cli.do_set(key_path=args.key_path, value=args.value, rich_helper=rich_helper)
+        return cli.do_set(
+            key_path=args.key_path,
+            value=args.value,
+            rich_helper=rich_helper)
     if args.command == 'rm':
         return cli.do_rm(key_path=args.key_path, rich_helper=rich_helper)
-    
+
     # Show help if no arguments provided
     if len(sys.argv) == 1:
         rich_helper.print_info("Welcome to TexIV!")
         parser.print_help()
-    
+
     return 0
 
 
@@ -147,7 +151,7 @@ class CLI:
     def do_init(input_func=None, rich_helper=None):
         if rich_helper is None:
             rich_helper = create_rich_helper()
-        
+
         rich_helper.print_warning(
             "You are initializing TexIV configuration...\n"
             "You must know that initializing will overwrite your current configuration.")
@@ -156,7 +160,8 @@ class CLI:
             with rich_helper.create_progress("Initializing configuration") as (progress, task):
                 Config.cli_init()
                 progress.update(task, completed=1, total=1)
-            rich_helper.print_success("Configuration initialized successfully!")
+            rich_helper.print_success(
+                "Configuration initialized successfully!")
         return 0
 
     def do_upgrade(self, rich_helper=None):
@@ -166,7 +171,7 @@ class CLI:
         """
         if rich_helper is None:
             rich_helper = create_rich_helper()
-            
+
         self.exit_with_not_exist()
 
         try:
@@ -183,13 +188,14 @@ class CLI:
             )
 
             rich_helper.print_info("Starting configuration upgrade...")
-            
+
             with rich_helper.create_progress("Creating backup") as (progress, task):
                 # Create backup before upgrade
                 shutil.copy2(config_path, backup_path)
                 progress.update(task, completed=1, total=1)
-            
-            rich_helper.print_success(f"Configuration backup created at: {backup_path}")
+
+            rich_helper.print_success(
+                f"Configuration backup created at: {backup_path}")
 
             # Load current config
             with open(config_path, "rb") as f:
@@ -260,7 +266,7 @@ class CLI:
                 progress.update(task, completed=1, total=1)
 
             rich_helper.print_success("Configuration successfully upgraded!")
-            
+
             upgrade_summary = {
                 "Backup Location": str(backup_path),
                 "Status": "✅ Completed",
@@ -269,14 +275,16 @@ class CLI:
                 "Added": "Missing sections with defaults",
                 "Format": "API_KEY values normalized to list"
             }
-            rich_helper.display_results_table("Upgrade Summary", upgrade_summary)
+            rich_helper.display_results_table(
+                "Upgrade Summary", upgrade_summary)
 
             return 0
 
         except Exception as e:
             logging.error(f"Failed to upgrade configuration: {e}")
             rich_helper.print_error(f"Error during upgrade: {e}")
-            rich_helper.print_warning("Your original configuration remains unchanged.")
+            rich_helper.print_warning(
+                "Your original configuration remains unchanged.")
             return 1
 
     def do_cat(self, rich_helper=None):
@@ -287,7 +295,7 @@ class CLI:
         # Show the config file content in a panel
         with open(self.CONFIG_FILE_PATH, "r") as f:
             content = f.read()
-        
+
         rich_helper.console.print(Panel(
             content,
             title="TexIV Configuration",
@@ -301,12 +309,12 @@ class CLI:
         self.exit_with_not_exist()
         if rich_helper is None:
             rich_helper = create_rich_helper()
-        
+
         try:
             with rich_helper.create_progress("Adding API key") as (progress, task):
                 Config().add_api_key(key)
                 progress.update(task, completed=1, total=1)
-            
+
             rich_helper.print_success("API key added successfully!")
             return 0
         except Exception as e:
@@ -325,6 +333,7 @@ class CLI:
 
         try:
             import ast
+
             import tomlkit
 
             config_path = self.CONFIG_FILE_PATH
@@ -385,7 +394,8 @@ class CLI:
                     f.write(tomlkit.dumps(config))
                 progress.update(task, completed=1, total=1)
 
-            rich_helper.print_success(f"Successfully set {key_path} = {parsed_value}")
+            rich_helper.print_success(
+                f"Successfully set {key_path} = {parsed_value}")
             return 0
 
         except Exception as e:
@@ -418,14 +428,16 @@ class CLI:
             # Navigate to the parent of the target key
             for key in keys[:-1]:
                 if key not in current:
-                    rich_helper.print_error(f"Key path {key_path} not found in configuration")
+                    rich_helper.print_error(
+                        f"Key path {key_path} not found in configuration")
                     sys.exit(1)
                 current = current[key]
 
             # Remove the final key
             final_key = keys[-1]
             if final_key not in current:
-                rich_helper.print_error(f"Key {final_key} not found in {'.'.join(keys[:-1])}")
+                rich_helper.print_error(
+                    f"Key {final_key} not found in {'.'.join(keys[:-1])}")
                 sys.exit(1)
 
             # Get the default value based on key path
@@ -449,7 +461,7 @@ class CLI:
                 return defaults.get('.'.join(keys), None)
 
             default_value = get_default_value(keys)
-            
+
             with rich_helper.create_progress("Removing configuration key") as (progress, task):
                 if default_value is None:
                     # If no default exists, just remove the key
@@ -463,7 +475,7 @@ class CLI:
                 # Write back to file
                 with open(config_path, "w") as f:
                     f.write(tomlkit.dumps(config))
-                
+
                 progress.update(task, completed=1, total=1)
 
             rich_helper.print_success(message)
