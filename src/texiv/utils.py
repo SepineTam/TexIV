@@ -1,6 +1,7 @@
 """Rich utilities for enhanced terminal output."""
 
 import logging
+import os
 from typing import Any
 
 from rich.console import Console
@@ -51,6 +52,9 @@ class RichHelper:
         Returns:
             Progress instance ready for use as context manager
         """
+        # Disable progress bars in CI environment
+        is_ci = os.getenv("CI", "").lower() == "true"
+        
         progress = Progress(
             SpinnerColumn(),
             TextColumn("[bold blue]{task.description}"),
@@ -58,7 +62,7 @@ class RichHelper:
             MofNCompleteColumn(),
             TimeRemainingColumn(),
             console=self.console,
-            disable=self.quiet,
+            disable=self.quiet or is_ci,
         )
 
         return progress

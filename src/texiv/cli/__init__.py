@@ -157,9 +157,10 @@ class CLI:
             "You must know that initializing will overwrite your current configuration.")
         flag = yes_or_no("Do you want to continue?", input_func=input_func)
         if flag:
-            with rich_helper.create_progress("Initializing configuration") as (progress, task):
+            with rich_helper.create_progress("Initializing configuration") as progress:
+                task = progress.add_task("Initializing", total=1)
                 Config.cli_init()
-                progress.update(task, completed=1, total=1)
+                progress.update(task, completed=1)
             rich_helper.print_success(
                 "Configuration initialized successfully!")
         return 0
@@ -189,10 +190,10 @@ class CLI:
 
             rich_helper.print_info("Starting configuration upgrade...")
 
-            with rich_helper.create_progress("Creating backup") as (progress, task):
-                # Create backup before upgrade
+            with rich_helper.create_progress("Creating backup") as progress:
+                task = progress.add_task("Creating backup", total=1)
                 shutil.copy2(config_path, backup_path)
-                progress.update(task, completed=1, total=1)
+                progress.update(task, completed=1)
 
             rich_helper.print_success(
                 f"Configuration backup created at: {backup_path}")
@@ -242,12 +243,13 @@ class CLI:
                         deep_merge(target[key], value)
                     # User values take precedence, skip existing keys
 
-            with rich_helper.create_progress("Merging configuration") as (progress, task):
+            with rich_helper.create_progress("Merging configuration") as progress:
+                task = progress.add_task("Merging configuration", total=1)
                 # Create merged config
                 merged_config = tomlkit.document()
                 deep_merge(merged_config, template)
                 deep_merge(merged_config, user_config)
-                progress.update(task, completed=1, total=1)
+                progress.update(task, completed=1)
 
             # Handle API_KEY type conversion (ensure it's always a list)
             for service in ["openai", "ollama"]:
@@ -259,11 +261,12 @@ class CLI:
                         merged_config["embed"][service]["API_KEY"] = [
                             str(api_keys)]
 
-            with rich_helper.create_progress("Writing upgraded configuration") as (progress, task):
+            with rich_helper.create_progress("Writing upgraded configuration") as progress:
+                task = progress.add_task("Writing configuration", total=1)
                 # Write upgraded configuration
                 with open(config_path, "w") as f:
                     f.write(tomlkit.dumps(merged_config))
-                progress.update(task, completed=1, total=1)
+                progress.update(task, completed=1)
 
             rich_helper.print_success("Configuration successfully upgraded!")
 
@@ -311,9 +314,10 @@ class CLI:
             rich_helper = create_rich_helper()
 
         try:
-            with rich_helper.create_progress("Adding API key") as (progress, task):
+            with rich_helper.create_progress("Adding API key") as progress:
+                task = progress.add_task("Adding API key", total=1)
                 Config().add_api_key(key)
-                progress.update(task, completed=1, total=1)
+                progress.update(task, completed=1)
 
             rich_helper.print_success("API key added successfully!")
             return 0
@@ -388,11 +392,12 @@ class CLI:
             final_key = keys[-1]
             current[final_key] = parsed_value
 
-            with rich_helper.create_progress("Saving configuration") as (progress, task):
+            with rich_helper.create_progress("Saving configuration") as progress:
+                task = progress.add_task("Saving configuration", total=1)
                 # Write back to file
                 with open(config_path, "w") as f:
                     f.write(tomlkit.dumps(config))
-                progress.update(task, completed=1, total=1)
+                progress.update(task, completed=1)
 
             rich_helper.print_success(
                 f"Successfully set {key_path} = {parsed_value}")
@@ -462,7 +467,8 @@ class CLI:
 
             default_value = get_default_value(keys)
 
-            with rich_helper.create_progress("Removing configuration key") as (progress, task):
+            with rich_helper.create_progress("Removing configuration key") as progress:
+                task = progress.add_task("Removing configuration key", total=1)
                 if default_value is None:
                     # If no default exists, just remove the key
                     del current[final_key]
@@ -476,7 +482,7 @@ class CLI:
                 with open(config_path, "w") as f:
                     f.write(tomlkit.dumps(config))
 
-                progress.update(task, completed=1, total=1)
+                progress.update(task, completed=1)
 
             rich_helper.print_success(message)
             return 0
