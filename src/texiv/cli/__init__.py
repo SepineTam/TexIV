@@ -17,7 +17,7 @@ from rich.panel import Panel
 from .. import __version__
 from ..config import Config
 from ..core.utils import yes_or_no
-from ..utils import create_rich_helper
+from ..utils import create_rich_helper, print_colored
 
 
 def main():
@@ -133,6 +133,25 @@ def main():
 class CLI:
     CONFIG_FILE_PATH = Config.CONFIG_FILE_PATH
     IS_EXIST_CONFIG_FILE = Config.is_exist()
+
+    def __init__(self):
+        banner = """
+████████╗███████╗██╗  ██╗██╗██╗   ██╗
+╚══██╔══╝██╔════╝╚██╗██╔╝██║██║   ██║
+   ██║   █████╗   ╚███╔╝ ██║██║   ██║
+   ██║   ██╔══╝   ██╔██╗ ██║╚██╗ ██╔╝
+   ██║   ███████╗██╔╝ ██╗██║ ╚████╔╝ 
+   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝  ╚═══╝  
+        """
+        separator = "━" * 40
+        print_colored(banner, 'magenta')
+        print_colored(separator, 'blue')
+        print_colored("      Transforming text as IV.      ", 'bold')
+        print_colored(separator, 'blue')
+        print()
+        print_colored(f"Version {__version__}", 'green')
+        print_colored("Type 'help' for available commands", 'yellow')
+        print()
 
     def exit_with_not_exist(self):
         """
