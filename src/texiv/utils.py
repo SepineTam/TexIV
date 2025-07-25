@@ -54,7 +54,7 @@ class RichHelper:
         """
         # Disable progress bars in CI environment
         is_ci = os.getenv("CI", "").lower() == "true"
-        
+
         progress = Progress(
             SpinnerColumn(),
             TextColumn("[bold blue]{task.description}"),
