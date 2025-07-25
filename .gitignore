@@ -15,3 +15,6 @@ wheels/
 
 # GitHub action log
 pytest.github.log/
+
+# local file
+*.local.*
