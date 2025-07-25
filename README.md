@@ -71,10 +71,4 @@ All models and parameters can be adjusted through configuration files in `～/.t
 ## 📄 License
 This project is licensed under the GNU Affero General Public License v3.0. See [LICENSE](LICENSE) for details.
 
-### License Notice
-
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-
-**Important:** If you run this software on a server and provide services to users over a network, you must provide the source code to those users under the terms of the AGPL-3.0 license.
+**Note:** Commercial use requires compliance with AGPL-3.0 terms, including source code disclosure for network services.
