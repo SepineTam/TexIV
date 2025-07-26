@@ -13,6 +13,9 @@ wheels/
 .vscode
 *.DS_Store
 
+# log file
+*.log
+
 # GitHub action log
 pytest.github.log/
 
