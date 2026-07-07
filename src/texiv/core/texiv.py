@@ -23,13 +23,31 @@ from .filter import Filter
 from .similarity import Similarity
 
 
+_parallel_count: int | None = None
+
+
+def set_parallel_count(count: int) -> None:
+    """Set the default async embedding concurrency for new TexIV instances."""
+    if not isinstance(count, int) or count < 1:
+        raise ValueError("Parallel count must be a positive integer.")
+    global _parallel_count
+    _parallel_count = count
+
+
+def get_parallel_count() -> int | None:
+    """Get the default async embedding concurrency."""
+    return _parallel_count
+
+
 class TexIV:
     CONFIG_FILE_PATH = Config.CONFIG_FILE_PATH
+    FORCE_ASYNC = False
 
     def __init__(
             self,
             valve: float = 0.0,
             is_async: bool = True,
+            max_concurrency: int | None = None,
             rich_helper=None):
         """
         Initialize TexIV with configuration.
@@ -37,6 +55,7 @@ class TexIV:
         Args:
             valve: The threshold value for filtering (0.0-1.0)
             is_async: Whether to use async operations
+            max_concurrency: Async embedding concurrency for this instance
             rich_helper: RichHelper instance for rich output
         """
         self.rich_helper = rich_helper or create_rich_helper()
@@ -82,14 +101,19 @@ class TexIV:
         self.valve = texiv_cfg.get("filter").get("valve")
 
         # Override async setting if specified
-        self.IS_ASYNC: bool = is_async & self.IS_ASYNC
+        self.IS_ASYNC = bool(is_async and (self.IS_ASYNC or self.FORCE_ASYNC))
+        if max_concurrency is None:
+            self.max_concurrency = get_parallel_count()
+        else:
+            self.max_concurrency = max_concurrency
         self.chunker = Chunk()
         self.embedder = Embed(embed_type=self.embed_type,
                               model=self.MODEL,
                               base_url=self.BASE_URL,
                               api_key=self.API_KEY,
                               max_length=self.MAX_LENGTH,
-                              is_async=self.IS_ASYNC)
+                              is_async=self.IS_ASYNC,
+                              max_concurrency=self.max_concurrency)
         self.similar = Similarity()
 
         if 0.0 < valve < 1.0:
@@ -110,16 +134,25 @@ class TexIV:
                 "rate": rate}
 
     def _embed_keywords(self, kws: str | List[str] | Set[str]) -> np.ndarray:
+        keywords = self._normalize_keywords(kws)
+        return self.embedder.embed(keywords)
+
+    async def _async_embed_keywords(self,
+                                    kws: str | List[str] | Set[str]) -> np.ndarray:
+        keywords = self._normalize_keywords(kws)
+        return await self.embedder.async_embed(keywords)
+
+    @staticmethod
+    def _normalize_keywords(kws: str | List[str] | Set[str]) -> List[str]:
         if isinstance(kws, str):
-            keywords = set(kws.split())
+            keywords = list(set(kws.split()))
         elif isinstance(kws, set):
             keywords = list(kws)
         elif isinstance(kws, list):
             keywords = list(set(kws))
         else:
             raise TypeError("Keywords must be a string, list, or set.")
-
-        return self.embedder.embed(keywords)
+        return keywords
 
     def _embed_chunked_content(self, content: List[str]) -> np.ndarray:
         """Embed chunked content."""
@@ -360,6 +393,61 @@ class TexIV:
             DataFrame with additional columns for analysis results
         """
         return self.texiv_df(df, col_name, kws)
+
+
+class AsyncTexIV(TexIV):
+    FORCE_ASYNC = True
+
+    async def texiv_it(
+            self,
+            content: str,
+            keywords: List[str],
+            stopwords: List[str] | None = None) -> Dict[str, float | int]:
+        """Asynchronously process text content with keywords."""
+        if stopwords:
+            self.chunker.load_stopwords(stopwords)
+
+        chunked_content = self.chunker.segment_from_text(content)
+        embedded_content_task = self._async_embed_chunked_content(chunked_content)
+        embedded_keywords_task = self._async_embed_keywords(keywords)
+        embedded_chunked_content, embedded_keywords = await asyncio.gather(
+            embedded_content_task,
+            embedded_keywords_task
+        )
+
+        dist_array = self.similar.similarity(
+            embedded_chunked_content,
+            embedded_keywords
+        )
+        filtered = self.filter.filter(dist_array)
+        two_stage_filtered = self.filter.two_stage_filter(filtered)
+        return self._description(two_stage_filtered)
+
+    async def texiv_df(self,
+                       df: pd.DataFrame,
+                       col_name: str,
+                       kws: List[str] | Set[str] | str) -> pd.DataFrame:
+        """Asynchronously process a DataFrame with a specified column and keywords."""
+        extract_col = df[col_name].astype(str).tolist()
+        embedded_keywords_task = self._async_embed_keywords(kws)
+        embedded_texts_task = self._async_embed_content(extract_col)
+        embedded_keywords, embedded_texts = await asyncio.gather(
+            embedded_keywords_task,
+            embedded_texts_task
+        )
+
+        results = [
+            self._texiv_embedded(embedded_text, embedded_keywords)
+            for embedded_text in embedded_texts
+        ]
+        return _write_result_to_df(df, col_name, results)
+
+    async def texiv_api(self,
+                        df: pd.DataFrame,
+                        col_name: str,
+                        kws: List[str]) -> pd.DataFrame:
+        """Asynchronously process a DataFrame with keywords."""
+        return await self.texiv_df(df, col_name, kws)
 
 
 def _write_result_to_df(

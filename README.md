@@ -53,6 +53,22 @@ keywords: List[str] = ["keyword1", "keyword2", "keyword3"]
 texiv.texiv_it(content, keywords)
 ```
 
+Async usage:
+
+```python
+import asyncio
+from typing import List
+
+from texiv import AsyncTexIV, set_parallel_count
+
+set_parallel_count(10)
+
+texiv = AsyncTexIV()
+content: str = "This is a test text..."
+keywords: List[str] = ["keyword1", "keyword2", "keyword3"]
+result = asyncio.run(texiv.texiv_it(content, keywords))
+```
+
 Output example:
 
 ```

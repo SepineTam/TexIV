@@ -11,12 +11,14 @@ from .chunk import Chunk
 from .embed import Embed
 from .filter import Filter
 from .similarity import Similarity
-from .texiv import TexIV
+from .texiv import AsyncTexIV, TexIV, set_parallel_count
 
 __all__ = [
     "Chunk",
     "Embed",
     "Similarity",
     "Filter",
-    "TexIV"
+    "TexIV",
+    "AsyncTexIV",
+    "set_parallel_count"
 ]

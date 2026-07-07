@@ -49,11 +49,20 @@ class Embed:
                 base_url=self.base_url
             ) for key in self.api_key
         ]
+
+        if max_concurrency is not None:
+            if not isinstance(max_concurrency, int) or max_concurrency < 1:
+                raise ValueError("max_concurrency must be a positive integer.")
+            async_client_count = max_concurrency
+        else:
+            async_client_count = len(self.api_key)
+
         self.async_clients: List[AsyncOpenAI] = [
             AsyncOpenAI(
-                api_key=key,
+                api_key=self.api_key[index % len(self.api_key)],
                 base_url=self.base_url
-            ) for key in self.api_key
+            ) for index in range(async_client_count)
+            if self.api_key
         ]
 
         # initialize pools
@@ -65,10 +74,7 @@ class Embed:
 
         self._pool_lock = asyncio.Lock()
 
-        if max_concurrency is None:
-            max_concurrency = len(self.async_clients)
-        self._max_concurrency = max(
-            1, min(len(self.async_clients), max_concurrency))
+        self._max_concurrency = max(1, len(self.async_clients))
         self._semaphore = asyncio.Semaphore(self._max_concurrency)
 
         if max_length:
@@ -181,7 +187,7 @@ class Embed:
                             f"Sync embed attempt {attempt + 1} failed: {e}")
                         if attempt == self.retry_times - 1:
                             raise
-                        time.sleep(2 ** attempt)
+                        await asyncio.sleep(2 ** attempt)
             finally:
                 async with self._pool_lock:
                     self._release_client(async_client, is_async=True)
