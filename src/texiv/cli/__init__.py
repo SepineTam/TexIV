@@ -283,7 +283,7 @@ class CLI:
             with rich_helper.create_progress("Writing upgraded configuration") as progress:
                 task = progress.add_task("Writing configuration", total=1)
                 # Write upgraded configuration
-                with open(config_path, "w") as f:
+                with open(config_path, "w", newline="\n") as f:
                     f.write(tomlkit.dumps(merged_config))
                 progress.update(task, completed=1)
 
@@ -414,7 +414,7 @@ class CLI:
             with rich_helper.create_progress("Saving configuration") as progress:
                 task = progress.add_task("Saving configuration", total=1)
                 # Write back to file
-                with open(config_path, "w") as f:
+                with open(config_path, "w", newline="\n") as f:
                     f.write(tomlkit.dumps(config))
                 progress.update(task, completed=1)
 
@@ -498,7 +498,7 @@ class CLI:
                     message = f"Successfully reset {key_path} to default: {default_value}"
 
                 # Write back to file
-                with open(config_path, "w") as f:
+                with open(config_path, "w", newline="\n") as f:
                     f.write(tomlkit.dumps(config))
 
                 progress.update(task, completed=1)

@@ -47,7 +47,7 @@ MTHD = "cosine"
 VALVE_TYPE = "value"
 valve = 0.618
 '''
-    with os.fdopen(fd, 'w') as f:
+    with os.fdopen(fd, 'w', newline="\n") as f:
         f.write(config_content)
     yield config_path
     # Cleanup after test
