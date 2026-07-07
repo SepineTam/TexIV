@@ -21,8 +21,8 @@ def temp_dir():
 @pytest.fixture
 def temp_config_file():
     """Create a temporary config file for testing"""
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.toml', delete=False) as f:
-        config_content = '''[embed]
+    fd, config_path = tempfile.mkstemp(suffix='.toml')
+    config_content = '''[embed]
 EMBED_TYPE = "openai"
 MAX_LENGTH = 64
 IS_ASYNC = false
@@ -47,12 +47,12 @@ MTHD = "cosine"
 VALVE_TYPE = "value"
 valve = 0.618
 '''
+    with os.fdopen(fd, 'w') as f:
         f.write(config_content)
-        f.flush()
-        yield f.name
-        # Cleanup after test
-        if os.path.exists(f.name):
-            os.unlink(f.name)
+    yield config_path
+    # Cleanup after test
+    if os.path.exists(config_path):
+        os.unlink(config_path)
 
 @pytest.fixture
 def mock_config_paths(temp_config_file):
