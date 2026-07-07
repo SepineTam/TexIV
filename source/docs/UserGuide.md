@@ -50,6 +50,54 @@ print(result)
 # 输出: {'freq': 5, 'count': 12, 'rate': 0.4167}
 ```
 
+### Async Usage / 异步用法
+
+**English:** Use `AsyncTexIV` when embedding requests are the bottleneck. Set concurrency before creating the instance.
+
+**中文:** 当主要耗时来自嵌入请求时，使用`AsyncTexIV`。请在创建实例之前设置并发数。
+
+```python
+import asyncio
+
+from texiv import AsyncTexIV, set_parallel_count
+
+# Set default concurrency for new AsyncTexIV instances.
+set_parallel_count(10)
+
+async def main():
+    texiv = AsyncTexIV()
+    text = "Digital transformation is reshaping the economy through intelligent technologies."
+    keywords = ["digital", "transformation", "technology"]
+    result = await texiv.texiv_it(text, keywords)
+    print(result)
+
+asyncio.run(main())
+```
+
+**中文示例:**
+
+```python
+import asyncio
+
+from texiv import AsyncTexIV, set_parallel_count
+
+# 设置新 AsyncTexIV 实例默认使用的并发数。
+set_parallel_count(10)
+
+async def main():
+    texiv = AsyncTexIV()
+    text = "数字化转型正在通过智能技术重塑经济结构。"
+    keywords = ["数字化", "转型", "技术"]
+    result = await texiv.texiv_it(text, keywords)
+    print(result)
+
+asyncio.run(main())
+```
+
+`set_parallel_count()` only affects instances created after it is called. For one instance only, pass `max_concurrency=10` to `AsyncTexIV`.
+
+`set_parallel_count()`只影响调用之后新建的实例。如果只想控制单个实例，可以直接使用`AsyncTexIV(max_concurrency=10)`。
+
 ---
 
 ## 🔧 Configuration / 配置
@@ -131,7 +179,47 @@ keywords = ["文档", "文本"]
 result_df = texiv.texiv_df(df, 'text', keywords)
 ```
 
-### 3. texiv_stata() - Stata Integration / Stata集成
+### 3. AsyncTexIV - Async Python Processing / 异步Python处理
+
+**English:** `AsyncTexIV` exposes async versions of the Python-facing methods. It does not change the Stata integration.
+
+**中文:** `AsyncTexIV`提供面向Python的异步方法，不改变Stata集成入口。
+
+```python
+import asyncio
+import pandas as pd
+
+from texiv import AsyncTexIV, set_parallel_count
+
+async def main():
+    set_parallel_count(10)
+    texiv = AsyncTexIV()
+    df = pd.DataFrame({
+        "text": ["First document", "Second document", "Third document"]
+    })
+    result_df = await texiv.texiv_df(df, "text", ["document", "text"])
+    return result_df
+
+result_df = asyncio.run(main())
+```
+
+Available async methods:
+
+| Method | Return value | Notes |
+|--------|--------------|-------|
+| `await texiv.texiv_it(content, keywords)` | `{"freq": int, "count": int, "rate": float}` | Single text processing |
+| `await texiv.texiv_df(df, col_name, kws)` | `pd.DataFrame` | Adds `{col}_freq`, `{col}_count`, `{col}_rate` |
+| `await texiv.texiv_api(df, col_name, kws)` | `pd.DataFrame` | Alias-style DataFrame API |
+
+可用异步方法：
+
+| 方法 | 返回值 | 说明 |
+|------|--------|------|
+| `await texiv.texiv_it(content, keywords)` | `{"freq": int, "count": int, "rate": float}` | 单文本处理 |
+| `await texiv.texiv_df(df, col_name, kws)` | `pd.DataFrame` | 增加`{列名}_freq`、`{列名}_count`、`{列名}_rate` |
+| `await texiv.texiv_api(df, col_name, kws)` | `pd.DataFrame` | DataFrame风格API |
+
+### 4. texiv_stata() - Stata Integration / Stata集成
 
 **English:** Process multiple texts for Stata integration
 **中文:** 处理多个文本用于Stata集成
@@ -173,6 +261,26 @@ texiv = TexIV(valve=0.75)  # 75% similarity threshold
 # 中文 - 设置自定义阈值
 texiv = TexIV(valve=0.75)  # 75%相似度阈值
 ```
+
+### Concurrency Adjustment / 并发数调整
+
+**English:** `set_parallel_count()` controls the default async embedding concurrency for newly created instances. Higher values can improve throughput when the embedding provider allows concurrent requests, but may trigger rate limits if set too high.
+
+**中文:** `set_parallel_count()`控制新建实例默认使用的异步嵌入并发数。当嵌入服务允许并发请求时，提高并发数可以提升吞吐量；过高的值可能触发服务限流。
+
+```python
+from texiv import AsyncTexIV, set_parallel_count
+
+set_parallel_count(10)
+texiv = AsyncTexIV()
+
+# Or control one instance directly.
+custom_texiv = AsyncTexIV(max_concurrency=5)
+```
+
+Stata usage keeps the existing `TexIV` path. The async Python API is intended for Python scripts, notebooks, and DataFrame workflows.
+
+Stata用法仍保持原来的`TexIV`路径。异步Python API主要面向Python脚本、Notebook和DataFrame处理流程。
 
 ---
 

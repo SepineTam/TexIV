@@ -61,6 +61,7 @@ from typing import List
 
 from texiv import AsyncTexIV, set_parallel_count
 
+# Set the default concurrency for new AsyncTexIV instances.
 set_parallel_count(10)
 
 texiv = AsyncTexIV()
@@ -68,6 +69,25 @@ content: str = "This is a test text..."
 keywords: List[str] = ["keyword1", "keyword2", "keyword3"]
 result = asyncio.run(texiv.texiv_it(content, keywords))
 ```
+
+For DataFrame processing, call the async API from an event loop:
+
+```python
+import asyncio
+import pandas as pd
+
+from texiv import AsyncTexIV, set_parallel_count
+
+async def main():
+    set_parallel_count(10)
+    texiv = AsyncTexIV()
+    df = pd.DataFrame({"text": ["First document", "Second document"]})
+    return await texiv.texiv_df(df, "text", ["document"])
+
+result_df = asyncio.run(main())
+```
+
+`set_parallel_count()` only affects `TexIV` or `AsyncTexIV` instances created after it is called. You can also pass `max_concurrency=` directly to an instance when you need per-instance control.
 
 Output example:
 
