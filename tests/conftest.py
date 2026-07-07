@@ -68,13 +68,16 @@ def setup_test_env(monkeypatch, temp_config_file):
     # Mock the config path
     from texiv.cli import CLI
     from texiv.config import Config
+    from texiv.core.texiv import TexIV
     
     original_config_path = CLI.CONFIG_FILE_PATH
     original_is_exist = CLI.IS_EXIST_CONFIG_FILE
+    original_texiv_config_path = TexIV.CONFIG_FILE_PATH
     
     CLI.CONFIG_FILE_PATH = temp_config_file
     CLI.IS_EXIST_CONFIG_FILE = True
     Config.CONFIG_FILE_PATH = temp_config_file
+    TexIV.CONFIG_FILE_PATH = temp_config_file
     
     yield
     
@@ -82,3 +85,4 @@ def setup_test_env(monkeypatch, temp_config_file):
     CLI.CONFIG_FILE_PATH = original_config_path
     CLI.IS_EXIST_CONFIG_FILE = original_is_exist
     Config.CONFIG_FILE_PATH = original_config_path
+    TexIV.CONFIG_FILE_PATH = original_texiv_config_path

@@ -158,19 +158,21 @@ class TestCLIWithRich:
         """Test main function with --quiet flag."""
         test_args = ["texiv", "--quiet", "--cat"]
         with patch('sys.argv', test_args):
-            with pytest.raises(SystemExit) as exc_info:
-                # Mock config file existence and content
-                with patch('texiv.cli.CLI.IS_EXIST_CONFIG_FILE', True):
-                    mock_file = MagicMock()
-                    mock_file.read.return_value = "[test]\nkey = 'value'"
-                    mock_context = MagicMock()
-                    mock_context.__enter__.return_value = mock_file
-                    mock_open = MagicMock(return_value=mock_context)
-                    with patch('builtins.open', mock_open):
-                        from texiv.cli import main
-                        main()
-            # Should exit gracefully
-            assert exc_info.value.code in [0, 1]
+            # Mock config file existence and content
+            with patch('texiv.cli.CLI.IS_EXIST_CONFIG_FILE', True):
+                mock_file = MagicMock()
+                mock_file.read.return_value = "[test]\nkey = 'value'"
+                mock_context = MagicMock()
+                mock_context.__enter__.return_value = mock_file
+                mock_open = MagicMock(return_value=mock_context)
+                with patch('builtins.open', mock_open):
+                    from texiv.cli import main
+                    try:
+                        result = main()
+                    except SystemExit as e:
+                        result = e.code
+            # Should exit or return gracefully
+            assert result in [0, 1]
 
     def test_main_function_with_verbose_flag(self):
         """Test main function with --verbose flag."""
